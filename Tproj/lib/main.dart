@@ -1,6 +1,9 @@
 // File: lib/main.dart
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:firebase_core/firebase_core.dart';
+import 'services/firebase_service.dart';
+import 'services/supabase_storage_service.dart';
 import 'constants/app_routes.dart';
 import 'screens/auth/login_screen.dart';
 import 'screens/auth/signup_screen.dart';
@@ -13,7 +16,18 @@ import 'screens/inspections/inspection_request_screen.dart';
 import 'screens/inspections/inspection_detail_screen.dart';
 import 'screens/inspections/delivery_detail_screen.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialize Firebase
+  await FirebaseService.initializeFirebase();
+  
+  // Initialize Supabase
+  await SupabaseStorageService.initialize(
+    supabaseUrl: 'https://tuggaocvhaxbelzerfuu.supabase.co', // Replace with your Supabase URL
+    supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1Z2dhb2N2aGF4YmVsemVyZnV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNDQ3MTIsImV4cCI6MjA2MDgyMDcxMn0.JxXDYzRREs6CyVleyWVKBPIJsVKVJVP_YFlVFv4se8k', // Replace with your Supabase anon key
+  );
+  
   runApp(const MyApp());
 }
 
@@ -63,10 +77,17 @@ class _LoadingScreenState extends State<LoadingScreen> {
   @override
   void initState() {
     super.initState();
-    // Simulate a delay before navigating to the login screen
-    Timer(const Duration(seconds: 3), () {
-      Navigator.pushReplacementNamed(context, AppRoutes.login);
-    });
+    // Check if user is already logged in
+    _checkUserSession();
+  }
+
+  Future<void> _checkUserSession() async {
+    // Simulate a delay for splash screen
+    await Future.delayed(const Duration(seconds: 3));
+    
+    // Navigate to the appropriate screen based on authentication status
+    // This will be implemented with Firebase Auth in the actual app
+    Navigator.pushReplacementNamed(context, AppRoutes.login);
   }
 
   @override

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1034249945332",
+    "project_id": "gradation-project-739be",
+    "storage_bucket": "gradation-project-739be.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1034249945332:android:3d0e99ec1b349e70e9dea1",
+        "android_client_info": {
+          "package_name": "com.example.check_deliver_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6QEnSJ2R6GvV1gBgkIPhLjqCBGl7R224"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
