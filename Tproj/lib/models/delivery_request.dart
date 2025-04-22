@@ -90,6 +90,7 @@ class DeliveryRequest {
 
   // Create a copy of DeliveryRequest with some fields updated
   DeliveryRequest copyWith({
+    String? id, // Added id parameter
     String? itemName,
     String? itemDescription,
     DateTime? estimatedDeliveryDate,
@@ -103,7 +104,7 @@ class DeliveryRequest {
     DateTime? updatedAt,
   }) {
     return DeliveryRequest(
-      id: this.id,
+      id: id ?? this.id, // Use provided id or current id
       userId: this.userId,
       inspectionRequestId: this.inspectionRequestId,
       itemName: itemName ?? this.itemName,

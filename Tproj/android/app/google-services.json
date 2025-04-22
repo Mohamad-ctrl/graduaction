@@ -12,7 +12,12 @@
           "package_name": "com.example.check_deliver_app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "1034249945332-jhc65m74k97sseabopvo85d64moabo2k.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyA6QEnSJ2R6GvV1gBgkIPhLjqCBGl7R224"
@@ -20,7 +25,55 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1034249945332-jhc65m74k97sseabopvo85d64moabo2k.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1034249945332-nlmcal11881e1f71f0fkfichdkorj5iq.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.checkDeliverApp"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1034249945332:android:0ed13fea4d5f867be9dea1",
+        "android_client_info": {
+          "package_name": "com.example.tproj"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1034249945332-jhc65m74k97sseabopvo85d64moabo2k.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6QEnSJ2R6GvV1gBgkIPhLjqCBGl7R224"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1034249945332-jhc65m74k97sseabopvo85d64moabo2k.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "1034249945332-nlmcal11881e1f71f0fkfichdkorj5iq.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.checkDeliverApp"
+              }
+            }
+          ]
         }
       }
     }

@@ -18,16 +18,13 @@ import 'screens/inspections/delivery_detail_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
   // Initialize Firebase
   await FirebaseService.initializeFirebase();
-  
   // Initialize Supabase
   await SupabaseStorageService.initialize(
     supabaseUrl: 'https://tuggaocvhaxbelzerfuu.supabase.co', // Replace with your Supabase URL
     supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1Z2dhb2N2aGF4YmVsemVyZnV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNDQ3MTIsImV4cCI6MjA2MDgyMDcxMn0.JxXDYzRREs6CyVleyWVKBPIJsVKVJVP_YFlVFv4se8k', // Replace with your Supabase anon key
   );
-  
   runApp(const MyApp());
 }
 
