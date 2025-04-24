@@ -86,6 +86,7 @@ class InspectionRequest {
 
   // Create a copy of InspectionRequest with some fields updated
   InspectionRequest copyWith({
+    String? id,  // Added id parameter
     String? itemName,
     String? itemDescription,
     DateTime? inspectionDate,
@@ -99,7 +100,7 @@ class InspectionRequest {
     DateTime? updatedAt,
   }) {
     return InspectionRequest(
-      id: this.id,
+      id: id ?? this.id,  // Use provided id or current id
       userId: this.userId,
       itemName: itemName ?? this.itemName,
       itemDescription: itemDescription ?? this.itemDescription,

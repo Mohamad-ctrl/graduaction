@@ -61,6 +61,7 @@ class InspectionReport {
 
   // Create a copy of InspectionReport with some fields updated
   InspectionReport copyWith({
+    String? id, // Added id parameter
     String? itemCondition,
     bool? itemMatchesDescription,
     List<String>? images,
@@ -69,7 +70,7 @@ class InspectionReport {
     DateTime? updatedAt,
   }) {
     return InspectionReport(
-      id: this.id,
+      id: id ?? this.id, // Use provided id or current id
       inspectionRequestId: this.inspectionRequestId,
       agentId: this.agentId,
       inspectionDate: this.inspectionDate,

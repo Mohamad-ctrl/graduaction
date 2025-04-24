@@ -2,38 +2,33 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/user.dart';
 import '../services/auth_service.dart';
-import 'signup_confirmation_screen.dart';
+import '../services/user_service.dart';
 
-class SignupScreen extends StatefulWidget {
-  const SignupScreen({Key? key}) : super(key: key);
+class AdminLoginScreen extends StatefulWidget {
+  const AdminLoginScreen({Key? key}) : super(key: key);
 
   @override
-  _SignupScreenState createState() => _SignupScreenState();
+  _AdminLoginScreenState createState() => _AdminLoginScreenState();
 }
 
-class _SignupScreenState extends State<SignupScreen> {
+class _AdminLoginScreenState extends State<AdminLoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  final _confirmPasswordController = TextEditingController();
-  final _phoneController = TextEditingController();
   
   bool _isLoading = false;
   String _errorMessage = '';
   final AuthService _authService = AuthService();
+  final UserService _userService = UserService();
 
   @override
   void dispose() {
-    _nameController.dispose();
     _emailController.dispose();
     _passwordController.dispose();
-    _confirmPasswordController.dispose();
-    _phoneController.dispose();
     super.dispose();
   }
 
-  Future<void> _signUp() async {
+  Future<void> _login() async {
     if (_formKey.currentState!.validate()) {
       setState(() {
         _isLoading = true;
@@ -41,26 +36,33 @@ class _SignupScreenState extends State<SignupScreen> {
       });
 
       try {
-        // Create user account
-        final user = await _authService.signUp(
+        // Attempt to sign in
+        final user = await _authService.signIn(
           email: _emailController.text.trim(),
           password: _passwordController.text,
-          name: _nameController.text.trim(),
-          phone: _phoneController.text.trim(),
         );
         
         if (user != null) {
-          // Navigate to confirmation screen instead of directly to home
-          if (mounted) {
-            Navigator.of(context).pushReplacement(
-              MaterialPageRoute(
-                builder: (context) => SignupConfirmationScreen(user: user),
-              ),
-            );
+          // Check if user is an admin
+          final isAdmin = await _userService.isUserAdmin(user.id);
+          
+          if (isAdmin) {
+            // Navigate to admin dashboard
+            if (mounted) {
+              Navigator.of(context).pushReplacementNamed('/admin/dashboard');
+            }
+          } else {
+            // Not an admin, show error
+            setState(() {
+              _errorMessage = 'You do not have admin privileges.';
+              _isLoading = false;
+            });
+            // Sign out the non-admin user
+            await _authService.signOut();
           }
         } else {
           setState(() {
-            _errorMessage = 'Failed to create account. Please try again.';
+            _errorMessage = 'Invalid email or password.';
             _isLoading = false;
           });
         }
@@ -82,9 +84,9 @@ class _SignupScreenState extends State<SignupScreen> {
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             colors: [
-              Colors.blue[900]!,
-              Colors.blue[800]!,
-              Colors.blue[400]!,
+              Colors.indigo[900]!,
+              Colors.indigo[800]!,
+              Colors.indigo[400]!,
             ],
           ),
         ),
@@ -98,12 +100,12 @@ class _SignupScreenState extends State<SignupScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: const <Widget>[
                   Text(
-                    "Sign Up",
+                    "Admin Login",
                     style: TextStyle(color: Colors.white, fontSize: 40),
                   ),
                   SizedBox(height: 10),
                   Text(
-                    "Create a new account",
+                    "Access admin dashboard",
                     style: TextStyle(color: Colors.white, fontSize: 18),
                   ),
                 ],
@@ -133,7 +135,7 @@ class _SignupScreenState extends State<SignupScreen> {
                               borderRadius: BorderRadius.circular(10),
                               boxShadow: const [
                                 BoxShadow(
-                                  color: Color.fromRGBO(225, 95, 27, .3),
+                                  color: Color.fromRGBO(27, 95, 225, .3),
                                   blurRadius: 20,
                                   offset: Offset(0, 10),
                                 ),
@@ -149,31 +151,9 @@ class _SignupScreenState extends State<SignupScreen> {
                                     ),
                                   ),
                                   child: TextFormField(
-                                    controller: _nameController,
-                                    decoration: const InputDecoration(
-                                      hintText: "Full Name",
-                                      hintStyle: TextStyle(color: Colors.grey),
-                                      border: InputBorder.none,
-                                    ),
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'Please enter your name';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    border: Border(
-                                      bottom: BorderSide(color: Colors.grey[200]!),
-                                    ),
-                                  ),
-                                  child: TextFormField(
                                     controller: _emailController,
                                     decoration: const InputDecoration(
-                                      hintText: "Email",
+                                      hintText: "Admin Email",
                                       hintStyle: TextStyle(color: Colors.grey),
                                       border: InputBorder.none,
                                     ),
@@ -191,33 +171,6 @@ class _SignupScreenState extends State<SignupScreen> {
                                 ),
                                 Container(
                                   padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    border: Border(
-                                      bottom: BorderSide(color: Colors.grey[200]!),
-                                    ),
-                                  ),
-                                  child: TextFormField(
-                                    controller: _phoneController,
-                                    decoration: const InputDecoration(
-                                      hintText: "Phone Number",
-                                      hintStyle: TextStyle(color: Colors.grey),
-                                      border: InputBorder.none,
-                                    ),
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'Please enter your phone number';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  decoration: BoxDecoration(
-                                    border: Border(
-                                      bottom: BorderSide(color: Colors.grey[200]!),
-                                    ),
-                                  ),
                                   child: TextFormField(
                                     controller: _passwordController,
                                     obscureText: true,
@@ -228,31 +181,7 @@ class _SignupScreenState extends State<SignupScreen> {
                                     ),
                                     validator: (value) {
                                       if (value == null || value.isEmpty) {
-                                        return 'Please enter a password';
-                                      }
-                                      if (value.length < 6) {
-                                        return 'Password must be at least 6 characters';
-                                      }
-                                      return null;
-                                    },
-                                  ),
-                                ),
-                                Container(
-                                  padding: const EdgeInsets.all(10),
-                                  child: TextFormField(
-                                    controller: _confirmPasswordController,
-                                    obscureText: true,
-                                    decoration: const InputDecoration(
-                                      hintText: "Confirm Password",
-                                      hintStyle: TextStyle(color: Colors.grey),
-                                      border: InputBorder.none,
-                                    ),
-                                    validator: (value) {
-                                      if (value == null || value.isEmpty) {
-                                        return 'Please confirm your password';
-                                      }
-                                      if (value != _passwordController.text) {
-                                        return 'Passwords do not match';
+                                        return 'Please enter your password';
                                       }
                                       return null;
                                     },
@@ -281,13 +210,13 @@ class _SignupScreenState extends State<SignupScreen> {
                                   margin: const EdgeInsets.symmetric(horizontal: 50),
                                   decoration: BoxDecoration(
                                     borderRadius: BorderRadius.circular(50),
-                                    color: Colors.blue[900],
+                                    color: Colors.indigo[900],
                                   ),
                                   child: TextButton(
-                                    onPressed: _signUp,
+                                    onPressed: _login,
                                     child: const Center(
                                       child: Text(
-                                        "Sign Up",
+                                        "Login as Admin",
                                         style: TextStyle(
                                           color: Colors.white,
                                           fontWeight: FontWeight.bold,
@@ -297,23 +226,16 @@ class _SignupScreenState extends State<SignupScreen> {
                                   ),
                                 ),
                           const SizedBox(height: 30),
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.center,
-                            children: [
-                              const Text("Already have an account?"),
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.of(context).pushReplacementNamed('/login');
-                                },
-                                child: const Text(
-                                  "Login",
-                                  style: TextStyle(
-                                    color: Colors.blue,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
+                          TextButton(
+                            onPressed: () {
+                              Navigator.of(context).pushReplacementNamed('/login');
+                            },
+                            child: const Text(
+                              "Return to User Login",
+                              style: TextStyle(
+                                color: Colors.indigo,
                               ),
-                            ],
+                            ),
                           ),
                         ],
                       ),
