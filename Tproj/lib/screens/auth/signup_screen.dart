@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/user.dart';
-import '../services/auth_service.dart';
+import '../../models/user.dart';
+import '../../services/auth_service.dart';
 import 'signup_confirmation_screen.dart';
 
 class SignupScreen extends StatefulWidget {

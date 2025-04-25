@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import '../models/address.dart';
-import '../models/payment_method.dart';
-import '../services/user_service.dart';
-import '../widgets/custom_app_bar.dart';
-import '../widgets/empty_state_widget.dart';
+import '../../models/address.dart';
+import '../../models/payment_method.dart';
+import '../../services/user_service.dart';
+import '../../widgets/custom_app_bar.dart';
+import '../../widgets/empty_state_widget.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);

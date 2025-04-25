@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
-import '../services/inspection_service.dart';
-import '../services/delivery_service.dart';
-import '../models/inspection_request.dart';
-import '../models/delivery_request.dart';
-import '../widgets/custom_app_bar.dart';
-import '../widgets/empty_state_widget.dart';
-import '../widgets/bottom_nav_bar.dart';
+import '../../services/inspection_service.dart';
+import '../../services/delivery_service.dart';
+import '../../models/inspection_request.dart';
+import '../../models/delivery_request.dart';
+import '../../widgets/custom_app_bar.dart';
+import '../../widgets/empty_state_widget.dart';
+import '../../widgets/bottom_nav_bar.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);

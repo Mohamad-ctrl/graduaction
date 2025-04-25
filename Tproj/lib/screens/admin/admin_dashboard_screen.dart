@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import '../models/user.dart';
-import '../services/auth_service.dart';
-import '../services/user_service.dart';
-import '../widgets/admin_drawer.dart';
+import '../../models/user.dart';
+import '../../services/auth_service.dart';
+import '../../services/user_service.dart';
+import '../../widgets/admin_drawer.dart';
 
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({Key? key}) : super(key: key);

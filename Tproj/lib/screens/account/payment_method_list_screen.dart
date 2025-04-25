@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../models/payment_method.dart';
-import '../services/user_service.dart';
-import '../widgets/custom_app_bar.dart';
+import '../../models/payment_method.dart';
+import '../../services/user_service.dart';
+import '../../widgets/custom_app_bar.dart';
 
 class PaymentMethodListScreen extends StatefulWidget {
   const PaymentMethodListScreen({Key? key}) : super(key: key);

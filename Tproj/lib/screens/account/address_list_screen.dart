@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../models/address.dart';
-import '../services/user_service.dart';
-import '../widgets/custom_app_bar.dart';
+import '../../models/address.dart';
+import '../../services/user_service.dart';
+import '../../widgets/custom_app_bar.dart';
 
 class AddressListScreen extends StatefulWidget {
   const AddressListScreen({Key? key}) : super(key: key);

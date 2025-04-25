@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../models/inspection_request.dart';
-import '../services/inspection_service.dart';
-import '../widgets/admin_drawer.dart';
+import '../../models/inspection_request.dart';
+import '../../services/inspection_service.dart';
+import '../../widgets/admin_drawer.dart';
 
 class AdminInspectionsScreen extends StatefulWidget {
   const AdminInspectionsScreen({Key? key}) : super(key: key);

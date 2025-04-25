@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import '../models/delivery_request.dart';
-import '../services/delivery_service.dart';
-import '../widgets/admin_drawer.dart';
+import '../../models/delivery_request.dart';
+import '../../services/delivery_service.dart';
+import '../../widgets/admin_drawer.dart';
 
 class AdminDeliveriesScreen extends StatefulWidget {
   const AdminDeliveriesScreen({Key? key}) : super(key: key);
