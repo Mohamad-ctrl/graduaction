@@ -15,7 +15,7 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
   
   bool _isLoading = true;
   List<DeliveryRequest> _deliveryRequests = [];
-  String _filterStatus = 'all'; // 'all', 'pending', 'in_progress', 'completed', 'cancelled'
+  String _filterStatus = 'all'; // 'all', 'pending', 'itemPickedUp', 'shipped', 'outForDelivery', 'delivered', 'cancelled'
 
   @override
   void initState() {
@@ -29,7 +29,6 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
     });
     
     try {
-      // TODO: Fix undefined method once delivery_service.dart is provided
       final requests = await _deliveryService.getAllDeliveryRequests();
       
       if (mounted) {
@@ -53,7 +52,7 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
   List<DeliveryRequest> get _filteredRequests {
     return _deliveryRequests.where((request) {
       // Filter by status
-      if (_filterStatus != 'all' && request.status.toString().split('.').last != _filterStatus) {
+      if (_filterStatus != 'all' && _getStatusString(request.status) != _filterStatus) {
         return false;
       }
       
@@ -198,6 +197,9 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
         statusColor = Colors.red;
         statusIcon = Icons.cancel;
         break;
+      // Handle potentially remaining old statuses if needed, or default
+      case DeliveryStatus.inProgress:
+      case DeliveryStatus.completed:
       default:
         statusColor = Colors.grey;
         statusIcon = Icons.help;
@@ -222,7 +224,7 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Request ID: ${request.id.substring(0, 8)}...'),
+            Text('Request ID: ${request.id.substring(0, min(8, request.id.length))}...'),
             Text(
               'Status: ${_getStatusText(request.status)}',
               style: TextStyle(
@@ -327,73 +329,75 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
           title: const Text('Update Delivery Status'),
           content: StatefulBuilder(
             builder: (context, setState) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('Current Status: ${_getStatusText(request.status)}'),
-                  const SizedBox(height: 16),
-                  const Text('Select New Status:'),
-                  RadioListTile<String>(
-                    title: const Text('Pending'),
-                    value: 'pending',
-                    groupValue: selectedStatus,
-                    onChanged: (value) {
-                      setState(() {
-                        selectedStatus = value!;
-                      });
-                    },
-                  ),
-                  RadioListTile<String>(
-                    title: const Text('Item Picked Up'),
-                    value: 'itemPickedUp',
-                    groupValue: selectedStatus,
-                    onChanged: (value) {
-                      setState(() {
-                        selectedStatus = value!;
-                      });
-                    },
-                  ),
-                  RadioListTile<String>(
-                    title: const Text('Shipped'),
-                    value: 'shipped',
-                    groupValue: selectedStatus,
-                    onChanged: (value) {
-                      setState(() {
-                        selectedStatus = value!;
-                      });
-                    },
-                  ),
-                  RadioListTile<String>(
-                    title: const Text('Out for Delivery'),
-                    value: 'outForDelivery',
-                    groupValue: selectedStatus,
-                    onChanged: (value) {
-                      setState(() {
-                        selectedStatus = value!;
-                      });
-                    },
-                  ),
-                  RadioListTile<String>(
-                    title: const Text('Delivered'),
-                    value: 'delivered',
-                    groupValue: selectedStatus,
-                    onChanged: (value) {
-                      setState(() {
-                        selectedStatus = value!;
-                      });
-                    },
-                  ),
-                  RadioListTile<String>(
-                    title: const Text('Cancelled'),
-                    value: 'cancelled',
-                    groupValue: selectedStatus,
-                    onChanged: (value) {
-                      setState(() {
-                        selectedStatus = value!;
-                      });
-                    },
-                  ),
-                ],
+              return SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('Current Status: ${_getStatusText(request.status)}'),
+                    const SizedBox(height: 16),
+                    const Text('Select New Status:'),
+                    RadioListTile<String>(
+                      title: const Text('Pending'),
+                      value: 'pending',
+                      groupValue: selectedStatus,
+                      onChanged: (value) {
+                        setState(() {
+                          selectedStatus = value!;
+                        });
+                      },
+                    ),
+                    RadioListTile<String>(
+                      title: const Text('Item Picked Up'),
+                      value: 'itemPickedUp',
+                      groupValue: selectedStatus,
+                      onChanged: (value) {
+                        setState(() {
+                          selectedStatus = value!;
+                        });
+                      },
+                    ),
+                    RadioListTile<String>(
+                      title: const Text('Shipped'),
+                      value: 'shipped',
+                      groupValue: selectedStatus,
+                      onChanged: (value) {
+                        setState(() {
+                          selectedStatus = value!;
+                        });
+                      },
+                    ),
+                    RadioListTile<String>(
+                      title: const Text('Out for Delivery'),
+                      value: 'outForDelivery',
+                      groupValue: selectedStatus,
+                      onChanged: (value) {
+                        setState(() {
+                          selectedStatus = value!;
+                        });
+                      },
+                    ),
+                    RadioListTile<String>(
+                      title: const Text('Delivered'),
+                      value: 'delivered',
+                      groupValue: selectedStatus,
+                      onChanged: (value) {
+                        setState(() {
+                          selectedStatus = value!;
+                        });
+                      },
+                    ),
+                    RadioListTile<String>(
+                      title: const Text('Cancelled'),
+                      value: 'cancelled',
+                      groupValue: selectedStatus,
+                      onChanged: (value) {
+                        setState(() {
+                          selectedStatus = value!;
+                        });
+                      },
+                    ),
+                  ],
+                ),
               );
             },
           ),
@@ -434,6 +438,11 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
         return 'delivered';
       case DeliveryStatus.cancelled:
         return 'cancelled';
+      // Handle potentially remaining old statuses if needed, or default
+      case DeliveryStatus.inProgress:
+      case DeliveryStatus.completed:
+      default:
+        return 'unknown'; // Added default return
     }
   }
 
@@ -451,6 +460,11 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
         return 'DELIVERED';
       case DeliveryStatus.cancelled:
         return 'CANCELLED';
+      // Handle potentially remaining old statuses if needed, or default
+      case DeliveryStatus.inProgress:
+      case DeliveryStatus.completed:
+      default:
+        return 'UNKNOWN'; // Added default return
     }
   }
 
@@ -461,7 +475,6 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
     }
     
     try {
-      // TODO: Fix once delivery_service.dart is provided
       await _deliveryService.updateDeliveryStatus(request.id, newStatus);
       
       // Reload requests to update the list
@@ -499,125 +512,18 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
       case 'cancelled':
         return DeliveryStatus.cancelled;
       default:
-        return DeliveryStatus.pending;
+        return DeliveryStatus.pending; // Default to pending if string is unknown
     }
   }
 
   void _showAssignAgentDialog({DeliveryRequest? request}) {
-    // In a real app, you would fetch available agents from your database
-    // For this example, we'll use mock data
-    final mockAgents = [
-      {'id': 'agent4', 'name': 'Ahmed Khan', 'type': 'delivery'},
-      {'id': 'agent5', 'name': 'Fatima Al-Zahra', 'type': 'delivery'},
-      {'id': 'agent6', 'name': 'Omar Yusuf', 'type': 'delivery'},
-    ];
-    
-    String? selectedAgentId;
-    DeliveryRequest? selectedRequest = request;
-    
-    showDialog(
-      context: context,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setState) {
-            return AlertDialog(
-              title: const Text('Assign Agent to Delivery'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  if (selectedRequest == null) ...[
-                    const Text('Select Delivery Request:'),
-                    DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(
-                        labelText: 'Delivery Request',
-                      ),
-                      items: _deliveryRequests
-                          .where((r) => r.status == DeliveryStatus.pending)
-                          .map((r) => DropdownMenuItem(
-                                value: r.id,
-                                child: Text('${r.itemName} (${r.id.substring(0, 8)}...)'),
-                              ))
-                          .toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          selectedRequest = _deliveryRequests.firstWhere((r) => r.id == value);
-                        });
-                      },
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-                  
-                  if (selectedRequest != null) ...[
-                    Text('Assigning agent to: ${selectedRequest!.itemName}'),
-                    const SizedBox(height: 16),
-                  ],
-                  
-                  const Text('Select Agent:'),
-                  DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(
-                      labelText: 'Agent',
-                    ),
-                    items: mockAgents
-                        .map((agent) => DropdownMenuItem(
-                              value: agent['id'] as String,
-                              child: Text(agent['name'] as String),
-                            ))
-                        .toList(),
-                    onChanged: (value) {
-                      setState(() {
-                        selectedAgentId = value;
-                      });
-                    },
-                  ),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Text('Cancel'),
-                ),
-                ElevatedButton(
-                  onPressed: selectedRequest != null && selectedAgentId != null
-                      ? () {
-                          Navigator.pop(context);
-                          _assignAgentToRequest(selectedRequest!.id, selectedAgentId!);
-                        }
-                      : null,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.indigo[900],
-                  ),
-                  child: const Text('Assign'),
-                ),
-              ],
-            );
-          },
-        );
-      },
+    // TODO: Implement agent assignment logic (requires AgentService and agent list)
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Agent assignment functionality not yet implemented')),
     );
   }
-
-  Future<void> _assignAgentToRequest(String requestId, String agentId) async {
-    try {
-      // TODO: Fix once delivery_service.dart is provided
-      await _deliveryService.assignAgentToDelivery(requestId, agentId);
-      
-      // Reload requests to update the list
-      _loadDeliveryRequests();
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Agent assigned successfully'),
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Error assigning agent: ${e.toString()}'),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
+  
+  int min(int a, int b) {
+    return a < b ? a : b;
   }
 }

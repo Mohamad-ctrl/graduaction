@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import '../../services/inspection_service.dart';
 import '../../services/delivery_service.dart';
 import '../../models/inspection_request.dart';
@@ -17,6 +18,7 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   final InspectionService _inspectionService = InspectionService();
   final DeliveryService _deliveryService = DeliveryService();
+  final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
   
   bool _isLoading = true;
   List<InspectionRequest> _inspections = [];
@@ -34,9 +36,14 @@ class _HomeScreenState extends State<HomeScreen> {
     });
     
     try {
-      // TODO: Fix argument issue once inspection_service.dart is provided
-      final inspections = await _inspectionService.getUserInspectionRequests();
-      final deliveries = await _deliveryService.getUserDeliveryRequests();
+      final userId = _auth.currentUser?.uid;
+      if (userId == null) {
+        throw Exception('User not logged in');
+      }
+      
+      // Pass userId parameter to fix the missing parameter errors
+      final inspections = await _inspectionService.getUserInspectionRequests(userId);
+      final deliveries = await _deliveryService.getUserDeliveryRequests(userId);
       
       if (mounted) {
         setState(() {
@@ -409,7 +416,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'ID: ${inspection.id.substring(0, 8)}',
+                    'ID: ${inspection.id.substring(0, min(8, inspection.id.length))}',
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey[600],
@@ -495,8 +502,15 @@ class _HomeScreenState extends State<HomeScreen> {
       case DeliveryStatus.delivered:
         progressPercentage = 1.0;
         break;
-      default:
+      case DeliveryStatus.inProgress:
+        progressPercentage = 0.3;
+        break;
+      case DeliveryStatus.completed:
+        progressPercentage = 1.0;
+        break;
+      case DeliveryStatus.cancelled:
         progressPercentage = 0.0;
+        break;
     }
 
     return Card(
@@ -554,7 +568,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Delivery date: ${_formatDate(delivery.estimatedDeliveryDate)}',
+                'Estimated delivery: ${_formatDate(delivery.estimatedDeliveryDate)}',
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.grey[600],
@@ -573,7 +587,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'ID: ${delivery.id.substring(0, 8)}',
+                    'ID: ${delivery.id.substring(0, min(8, delivery.id.length))}',
                     style: TextStyle(
                       fontSize: 12,
                       color: Colors.grey[600],
@@ -607,7 +621,9 @@ class _HomeScreenState extends State<HomeScreen> {
       case InspectionStatus.completed:
         return Colors.green;
       case InspectionStatus.reportUploaded:
-        return Colors.purple;
+        return Colors.teal;
+      case InspectionStatus.cancelled:
+        return Colors.red;
       default:
         return Colors.grey;
     }
@@ -625,6 +641,8 @@ class _HomeScreenState extends State<HomeScreen> {
         return 'Completed';
       case InspectionStatus.reportUploaded:
         return 'Report Uploaded';
+      case InspectionStatus.cancelled:
+        return 'Cancelled';
       default:
         return 'Unknown';
     }
@@ -642,6 +660,12 @@ class _HomeScreenState extends State<HomeScreen> {
         return Colors.purple;
       case DeliveryStatus.delivered:
         return Colors.green;
+      case DeliveryStatus.inProgress:
+        return Colors.blue;
+      case DeliveryStatus.completed:
+        return Colors.green;
+      case DeliveryStatus.cancelled:
+        return Colors.red;
       default:
         return Colors.grey;
     }
@@ -652,20 +676,29 @@ class _HomeScreenState extends State<HomeScreen> {
       case DeliveryStatus.pending:
         return 'Pending';
       case DeliveryStatus.itemPickedUp:
-        return 'Item Picked Up';
+        return 'Picked Up';
       case DeliveryStatus.shipped:
         return 'Shipped';
       case DeliveryStatus.outForDelivery:
         return 'Out for Delivery';
       case DeliveryStatus.delivered:
         return 'Delivered';
+      case DeliveryStatus.inProgress:
+        return 'In Progress';
+      case DeliveryStatus.completed:
+        return 'Completed';
+      case DeliveryStatus.cancelled:
+        return 'Cancelled';
       default:
         return 'Unknown';
     }
   }
 
-  String _formatDate(DateTime? date) {
-    if (date == null) return 'N/A';
+  String _formatDate(DateTime date) {
     return '${date.day}/${date.month}/${date.year}';
+  }
+  
+  int min(int a, int b) {
+    return a < b ? a : b;
   }
 }

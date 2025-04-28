@@ -5,12 +5,13 @@ import '../../models/payment_method.dart';
 import '../../services/user_service.dart';
 import '../../widgets/custom_app_bar.dart';
 import '../../widgets/empty_state_widget.dart';
+import '../../widgets/bottom_nav_bar.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({Key? key}) : super(key: key);
 
   @override
-  _ProfileScreenState createState() => _ProfileScreenState();
+  State<ProfileScreen> createState() => _ProfileScreenState();
 }
 
 class _ProfileScreenState extends State<ProfileScreen> {
@@ -82,6 +83,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
               ),
             ),
+      bottomNavigationBar: const BottomNavBar(currentIndex: 3),
     );
   }
   
@@ -122,7 +124,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                user?.name ?? 'User',
+                                user?.username ?? 'User',
                                 style: const TextStyle(
                                   fontSize: 20,
                                   fontWeight: FontWeight.bold,
@@ -137,7 +139,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                user?.phone ?? '+971 XX XXX XXXX',
+                                user?.phoneNumber ?? '+971 XX XXX XXXX',
                                 style: TextStyle(
                                   color: Colors.grey[600],
                                 ),
@@ -258,7 +260,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         ],
                       ),
                       subtitle: Text(
-                        '${address.street}, ${address.city}, ${address.state}',
+                        '${address.addressLine1}, ${address.city}, ${address.state}',
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -441,7 +443,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   Icons.person,
                   color: Colors.indigo[900],
                 ),
-                title: const Text('Account Information'),
+                title: const Text('Account Center'),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: () {
                   Navigator.pushNamed(context, '/account');
@@ -462,24 +464,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
               const Divider(height: 1),
               ListTile(
                 leading: Icon(
-                  Icons.admin_panel_settings,
-                  color: Colors.indigo[900],
+                  Icons.logout,
+                  color: Colors.red[700],
                 ),
-                title: const Text('Admin Panel'),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  Navigator.pushNamed(context, '/admin/login');
-                },
-              ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(
-                  Icons.exit_to_app,
-                  color: Colors.red,
-                ),
-                title: const Text(
+                title: Text(
                   'Logout',
-                  style: TextStyle(color: Colors.red),
+                  style: TextStyle(
+                    color: Colors.red[700],
+                  ),
                 ),
                 onTap: () {
                   _showLogoutConfirmation();
@@ -492,28 +484,6 @@ class _ProfileScreenState extends State<ProfileScreen> {
     );
   }
   
-  String _getCardTypeLabel(String cardType) {
-    switch (cardType) {
-      case 'visa':
-        return 'Visa';
-      case 'mastercard':
-        return 'MasterCard';
-      case 'amex':
-        return 'American Express';
-      default:
-        return 'Credit Card';
-    }
-  }
-  
-  String _formatCardNumber(String cardNumber) {
-    // Show only last 4 digits
-    if (cardNumber.length >= 4) {
-      final lastFour = cardNumber.substring(cardNumber.length - 4);
-      return '•••• •••• •••• $lastFour';
-    }
-    return cardNumber;
-  }
-  
   void _showLogoutConfirmation() {
     showDialog(
       context: context,
@@ -522,36 +492,64 @@ class _ProfileScreenState extends State<ProfileScreen> {
         content: const Text('Are you sure you want to logout?'),
         actions: [
           TextButton(
-            onPressed: () => Navigator.pop(context),
+            onPressed: () {
+              Navigator.pop(context);
+            },
             child: const Text('Cancel'),
           ),
-          ElevatedButton(
-            onPressed: () async {
+          TextButton(
+            onPressed: () {
               Navigator.pop(context);
-              try {
-                await _userService.logout();
-                if (mounted) {
-                  Navigator.pushNamedAndRemoveUntil(
-                    context,
-                    '/login',
-                    (route) => false,
-                  );
-                }
-              } catch (e) {
-                if (mounted) {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Error logging out: ${e.toString()}')),
-                  );
-                }
-              }
+              _logout();
             },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
+            child: Text(
+              'Logout',
+              style: TextStyle(
+                color: Colors.red[700],
+              ),
             ),
-            child: const Text('Logout'),
           ),
         ],
       ),
     );
+  }
+  
+  Future<void> _logout() async {
+    try {
+      // Call auth service logout method
+      // await _authService.logout();
+      
+      // Navigate to login screen
+      Navigator.pushNamedAndRemoveUntil(
+        context,
+        '/login',
+        (route) => false,
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error logging out: ${e.toString()}')),
+      );
+    }
+  }
+  
+  String _getCardTypeLabel(String cardType) {
+    switch (cardType.toLowerCase()) {
+      case 'visa':
+        return 'Visa';
+      case 'mastercard':
+        return 'Mastercard';
+      case 'amex':
+        return 'American Express';
+      case 'discover':
+        return 'Discover';
+      default:
+        return cardType;
+    }
+  }
+  
+  String _formatCardNumber(String cardNumber) {
+    if (cardNumber.length < 4) return cardNumber;
+    
+    return '•••• •••• •••• ${cardNumber.substring(cardNumber.length - 4)}';
   }
 }

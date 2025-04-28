@@ -41,6 +41,22 @@ class DeliveryService {
     }
   }
 
+  // Get all delivery requests for a user
+  Future<List<DeliveryRequest>> getUserDeliveries(String userId) async {
+    try {
+      final snapshot = await _firestore
+          .collection('deliveryRequests')
+          .where('userId', isEqualTo: userId)
+          .orderBy('createdAt', descending: true)
+          .get();
+      
+      return snapshot.docs.map((doc) => DeliveryRequest.fromMap(doc.data(), doc.id)).toList();
+    } catch (e) {
+      print('Error getting user deliveries: $e');
+      return [];
+    }
+  }
+
   Stream<List<DeliveryRequest>> getUserDeliveryRequests(String userId) {
     return _firestore
         .collection('deliveryRequests')

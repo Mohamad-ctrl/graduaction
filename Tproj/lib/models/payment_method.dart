@@ -1,18 +1,10 @@
-enum PaymentMethodType {
-  creditCard,
-  debitCard,
-  bankTransfer,
-  wallet
-}
-
 class PaymentMethod {
   final String id;
   final String userId;
-  final PaymentMethodType type;
-  final String name;
-  final String? cardNumber;
-  final String? cardHolderName;
-  final String? expiryDate;
+  final String cardType;  // Changed from PaymentMethodType to match profile_screen.dart usage
+  final String cardNumber;
+  final String cardHolderName;
+  final String expiryDate;
   final bool isDefault;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -20,11 +12,10 @@ class PaymentMethod {
   PaymentMethod({
     required this.id,
     required this.userId,
-    required this.type,
-    required this.name,
-    this.cardNumber,
-    this.cardHolderName,
-    this.expiryDate,
+    required this.cardType,
+    required this.cardNumber,
+    required this.cardHolderName,
+    required this.expiryDate,
     this.isDefault = false,
     required this.createdAt,
     required this.updatedAt,
@@ -34,11 +25,10 @@ class PaymentMethod {
     return PaymentMethod(
       id: id,
       userId: map['userId'] ?? '',
-      type: PaymentMethodType.values[map['type'] ?? 0],
-      name: map['name'] ?? '',
-      cardNumber: map['cardNumber'],
-      cardHolderName: map['cardHolderName'],
-      expiryDate: map['expiryDate'],
+      cardType: map['cardType'] ?? '',
+      cardNumber: map['cardNumber'] ?? '',
+      cardHolderName: map['cardHolderName'] ?? '',
+      expiryDate: map['expiryDate'] ?? '',
       isDefault: map['isDefault'] ?? false,
       createdAt: map['createdAt']?.toDate() ?? DateTime.now(),
       updatedAt: map['updatedAt']?.toDate() ?? DateTime.now(),
@@ -48,8 +38,7 @@ class PaymentMethod {
   Map<String, dynamic> toMap() {
     return {
       'userId': userId,
-      'type': type.index,
-      'name': name,
+      'cardType': cardType,
       'cardNumber': cardNumber,
       'cardHolderName': cardHolderName,
       'expiryDate': expiryDate,
@@ -62,8 +51,7 @@ class PaymentMethod {
   PaymentMethod copyWith({
     String? id,
     String? userId,
-    PaymentMethodType? type,
-    String? name,
+    String? cardType,
     String? cardNumber,
     String? cardHolderName,
     String? expiryDate,
@@ -74,8 +62,7 @@ class PaymentMethod {
     return PaymentMethod(
       id: id ?? this.id,
       userId: userId ?? this.userId,
-      type: type ?? this.type,
-      name: name ?? this.name,
+      cardType: cardType ?? this.cardType,
       cardNumber: cardNumber ?? this.cardNumber,
       cardHolderName: cardHolderName ?? this.cardHolderName,
       expiryDate: expiryDate ?? this.expiryDate,

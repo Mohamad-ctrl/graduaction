@@ -1,16 +1,22 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import 'app_routes.dart';
 import 'services/auth_service.dart';
 import 'services/agent_service.dart';
+import 'services/supabase_storage_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   
-  // Initialize Supabase for storage
-  await initializeSupabase();
+  // Initialize Supabase for storage with the provided credentials
+  await SupabaseStorageService.initialize(
+    supabaseUrl: 'https://tuggaocvhaxbelzerfuu.supabase.co',
+    supabaseAnonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InR1Z2dhb2N2aGF4YmVsemVyZnV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDUyNDQ3MTIsImV4cCI6MjA2MDgyMDcxMn0.JxXDYzRREs6CyVleyWVKBPIJsVKVJVP_YFlVFv4se8k',
+  );
+  print('Supabase initialized with actual credentials');
   
   // Create mock agents for testing the admin panel
   final agentService = AgentService();
@@ -22,12 +28,6 @@ void main() async {
   }
   
   runApp(const MyApp());
-}
-
-Future<void> initializeSupabase() async {
-  // Initialize Supabase client
-  // This would be implemented with actual Supabase credentials
-  print('Supabase initialized');
 }
 
 class MyApp extends StatelessWidget {

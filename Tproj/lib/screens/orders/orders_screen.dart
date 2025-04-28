@@ -7,6 +7,7 @@ import '../../widgets/custom_app_bar.dart';
 import '../../widgets/empty_state_widget.dart';
 import '../../widgets/bottom_nav_bar.dart';
 import '../../constants/app_routes.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class OrdersScreen extends StatefulWidget {
   const OrdersScreen({super.key});
@@ -37,14 +38,27 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
     });
 
     try {
-      final inspections = await _inspectionService.getUserInspections();
-      final deliveries = await _deliveryService.getUserDeliveries();
-      
-      setState(() {
-        _inspections = inspections;
-        _deliveries = deliveries;
-        _isLoading = false;
-      });
+      final userId = FirebaseAuth.instance.currentUser?.uid;
+      if (userId != null) {
+        final inspections = await _inspectionService.getUserInspections(userId);
+        final deliveries = await _deliveryService.getUserDeliveries(userId);
+        
+        setState(() {
+          _inspections = inspections;
+          _deliveries = deliveries;
+          _isLoading = false;
+        });
+      } else {
+        setState(() {
+          _isLoading = false;
+        });
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('User not logged in')),
+          );
+        }
+      }
     } catch (e) {
       setState(() {
         _isLoading = false;
@@ -102,10 +116,11 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
       return EmptyStateWidget(
         message: 'You have no inspection requests yet',
         icon: Icons.search,
-        actionText: 'Request Inspection',
-        onActionPressed: () {
+        buttonText: 'Request Inspection',
+        onButtonPressed: () {
           Navigator.pushNamed(context, AppRoutes.inspectionRequest);
         },
+        title: 'No Inspections',
       );
     }
 
@@ -121,9 +136,18 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
 
   Widget _buildDeliveriesList() {
     if (_deliveries.isEmpty) {
-      return const EmptyStateWidget(
+      return EmptyStateWidget(
         message: 'You have no delivery requests yet',
         icon: Icons.local_shipping,
+        title: 'No Deliveries',
+        buttonText: 'Request Delivery',
+        onButtonPressed: () {
+          // Navigate to delivery request screen if available
+          // For now, just show a message
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Delivery request feature coming soon')),
+          );
+        },
       );
     }
 
@@ -162,18 +186,18 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Inspection #${inspection.id.substring(0, 6)}',
+                    'Inspection #${inspection.id.substring(0, min(inspection.id.length, 6))}',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
                   ),
-                  _buildStatusChip(inspection.status),
+                  _buildStatusChip(inspection.status.toString().split('.').last),
                 ],
               ),
               const SizedBox(height: 12),
-              _buildInfoRow('Date', inspection.scheduledDate),
-              _buildInfoRow('Location', inspection.location),
+              _buildInfoRow('Date', inspection.inspectionDate.toString().substring(0, 10)),
+              _buildInfoRow('Location', inspection.location ?? 'Not specified'),
               _buildInfoRow('Item', inspection.itemDescription),
               const SizedBox(height: 8),
               const Divider(),
@@ -224,13 +248,13 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Delivery #${delivery.id.substring(0, 6)}',
+                    'Delivery #${delivery.id.substring(0, min(delivery.id.length, 6))}',
                     style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       fontSize: 16,
                     ),
                   ),
-                  _buildStatusChip(delivery.status),
+                  _buildStatusChip(delivery.status.toString().split('.').last),
                 ],
               ),
               const SizedBox(height: 12),
@@ -301,7 +325,7 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
       case 'scheduled':
         backgroundColor = Colors.blue;
         break;
-      case 'in progress':
+      case 'inprogress':
         backgroundColor = Colors.purple;
         break;
       case 'completed':
@@ -329,5 +353,10 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
         ),
       ),
     );
+  }
+  
+  // Helper function to get minimum of two integers
+  int min(int a, int b) {
+    return a < b ? a : b;
   }
 }

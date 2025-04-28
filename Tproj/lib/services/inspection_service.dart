@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:io';
-import '../models/inspection_request.dart';
-import '../models/inspection_report.dart';
+import '../models/inspection_request.dart'; // Defines InspectionRequest and InspectionStatus
+import '../models/inspection_report.dart'; // Defines InspectionReport, InspectionReportRequest, InspectionReportStatus
 import 'supabase_storage_service.dart';
 
 class InspectionService {
@@ -21,27 +21,48 @@ class InspectionService {
     String? notes,
   }) async {
     try {
-      final requestData = InspectionRequest(
-        id: '',
-        userId: userId,
-        itemName: itemName,
-        itemDescription: itemDescription,
-        requestDate: DateTime.now(),
-        inspectionDate: inspectionDate,
-        status: InspectionStatus.pending,
-        location: location,
-        sellerContact: sellerContact,
-        images: images,
-        notes: notes,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
+      // Create the data map first, excluding the ID
+      final requestDataMap = {
+        'userId': userId,
+        'itemName': itemName,
+        'itemDescription': itemDescription,
+        'requestDate': Timestamp.now(),
+        'inspectionDate': Timestamp.fromDate(inspectionDate),
+        'status': InspectionStatus.pending.index,
+        'location': location,
+        'sellerContact': sellerContact,
+        'images': images,
+        'notes': notes,
+        'createdAt': Timestamp.now(),
+        'updatedAt': Timestamp.now(),
+        'agentId': null, // Ensure agentId is included, even if null
+        'price': null,   // Ensure price is included, even if null
+      };
 
-      final docRef = await _firestore.collection('inspectionRequests').add(requestData.toMap());
-      return requestData.copyWith(id: docRef.id);
+      // Add the document to Firestore to get the ID
+      final docRef = await _firestore.collection('inspectionRequests').add(requestDataMap);
+      
+      // Return the full InspectionRequest object using fromMap
+      return InspectionRequest.fromMap(requestDataMap, docRef.id);
     } catch (e) {
-      print('Error creating inspection request: $e');
+      // print('Error creating inspection request: $e'); // Removed print
       return null;
+    }
+  }
+
+  // Get all inspection requests for a user (Future-based)
+  Future<List<InspectionRequest>> getUserInspections(String userId) async {
+    try {
+      final snapshot = await _firestore
+          .collection('inspectionRequests')
+          .where('userId', isEqualTo: userId)
+          .orderBy('createdAt', descending: true)
+          .get();
+      
+      return snapshot.docs.map((doc) => InspectionRequest.fromMap(doc.data(), doc.id)).toList();
+    } catch (e) {
+      // print('Error getting user inspections: $e'); // Removed print
+      return [];
     }
   }
 
@@ -66,7 +87,7 @@ class InspectionService {
       }
       return null;
     } catch (e) {
-      print('Error getting inspection request: $e');
+      // print('Error getting inspection request: $e'); // Removed print
       return null;
     }
   }
@@ -88,23 +109,25 @@ class InspectionService {
       
       if (!requestDoc.exists) return false;
       
-      final request = InspectionRequest.fromMap(requestDoc.data()!, requestDoc.id);
-      final updatedRequest = request.copyWith(
-        itemName: itemName,
-        itemDescription: itemDescription,
-        inspectionDate: inspectionDate,
-        status: status,
-        location: location,
-        sellerContact: sellerContact,
-        images: images,
-        notes: notes,
-        updatedAt: DateTime.now(),
-      );
+      // Create a map of fields to update, excluding null values
+      final Map<String, dynamic> updateData = {};
+      if (itemName != null) updateData['itemName'] = itemName;
+      if (itemDescription != null) updateData['itemDescription'] = itemDescription;
+      if (inspectionDate != null) updateData['inspectionDate'] = Timestamp.fromDate(inspectionDate);
+      if (status != null) updateData['status'] = status.index;
+      if (location != null) updateData['location'] = location;
+      if (sellerContact != null) updateData['sellerContact'] = sellerContact;
+      if (images != null) updateData['images'] = images;
+      if (notes != null) updateData['notes'] = notes;
       
-      await requestRef.update(updatedRequest.toMap());
+      if (updateData.isNotEmpty) {
+        updateData['updatedAt'] = Timestamp.now();
+        await requestRef.update(updateData);
+      }
+      
       return true;
     } catch (e) {
-      print('Error updating inspection request: $e');
+      // print('Error updating inspection request: $e'); // Removed print
       return false;
     }
   }
@@ -113,12 +136,12 @@ class InspectionService {
     try {
       final imageUrls = await _storageService.uploadFiles(
         bucketName: _bucketName,
-        path: requestId,
+        path: 'inspections/$requestId',
         files: images,
       );
       return imageUrls;
     } catch (e) {
-      print('Error uploading inspection images: $e');
+      // print('Error uploading inspection images: $e'); // Removed print
       return [];
     }
   }
@@ -133,29 +156,30 @@ class InspectionService {
     required Map<String, dynamic> additionalDetails,
   }) async {
     try {
-      await updateInspectionRequest(
-        requestId: inspectionRequestId,
-        status: InspectionStatus.reportUploaded,
-      );
+      // Update the original request status
+      await updateInspectionStatus(inspectionRequestId, InspectionStatus.reportUploaded);
       
-      final reportData = InspectionReport(
-        id: '',
-        inspectionRequestId: inspectionRequestId,
-        agentId: agentId,
-        inspectionDate: DateTime.now(),
-        itemCondition: itemCondition,
-        itemMatchesDescription: itemMatchesDescription,
-        images: images,
-        comments: comments,
-        additionalDetails: additionalDetails,
-        createdAt: DateTime.now(),
-        updatedAt: DateTime.now(),
-      );
+      final reportDataMap = {
+        'inspectionRequestId': inspectionRequestId,
+        'agentId': agentId,
+        'inspectionDate': Timestamp.now(),
+        'itemCondition': itemCondition,
+        'itemMatchesDescription': itemMatchesDescription,
+        'images': images,
+        'comments': comments,
+        'additionalDetails': additionalDetails,
+        'createdAt': Timestamp.now(),
+        'updatedAt': Timestamp.now(),
+      };
 
-      final docRef = await _firestore.collection('inspectionReports').add(reportData.toMap());
-      return reportData.copyWith(id: docRef.id);
+      final docRef = await _firestore.collection('inspectionReports').add(reportDataMap);
+      
+      // Fetch the created report to return the full object
+      final reportDoc = await docRef.get();
+      return InspectionReport.fromMap(reportDoc.data()!, reportDoc.id);
+
     } catch (e) {
-      print('Error creating inspection report: $e');
+      // print('Error creating inspection report: $e'); // Removed print
       return null;
     }
   }
@@ -174,56 +198,57 @@ class InspectionService {
       }
       return null;
     } catch (e) {
-      print('Error getting inspection report: $e');
+      // print('Error getting inspection report: $e'); // Removed print
       return null;
     }
   }
 
   Future<bool> cancelInspectionRequest(String requestId) async {
     try {
-      await updateInspectionRequest(
-        requestId: requestId,
-        status: InspectionStatus.cancelled,
-      );
+      await updateInspectionStatus(requestId, InspectionStatus.cancelled);
       return true;
     } catch (e) {
-      print('Error cancelling inspection request: $e');
+      // print('Error cancelling inspection request: $e'); // Removed print
       return false;
     }
   }
 
+  // Method to get all inspection requests (potentially for admin)
   Future<List<InspectionRequest>> getAllInspectionRequests() async {
     try {
-      final snapshot = await _firestore.collection('inspectionRequests').get();
+      final snapshot = await _firestore.collection('inspectionRequests').orderBy('createdAt', descending: true).get();
       return snapshot.docs.map((doc) => InspectionRequest.fromMap(doc.data(), doc.id)).toList();
     } catch (e) {
-      print('Error getting all inspection requests: $e');
+      // print('Error getting all inspection requests: $e'); // Removed print
       return [];
     }
   }
 
+  // Method to update only the status of an inspection request
   Future<bool> updateInspectionStatus(String requestId, InspectionStatus status) async {
     try {
       await _firestore.collection('inspectionRequests').doc(requestId).update({
         'status': status.index,
-        'updatedAt': DateTime.now(),
+        'updatedAt': Timestamp.now(),
       });
       return true;
     } catch (e) {
-      print('Error updating inspection status: $e');
+      // print('Error updating inspection status: $e'); // Removed print
       return false;
     }
   }
 
+  // Method to assign an agent to an inspection request
   Future<bool> assignAgentToInspection(String requestId, String agentId) async {
     try {
       await _firestore.collection('inspectionRequests').doc(requestId).update({
         'agentId': agentId,
-        'updatedAt': DateTime.now(),
+        'status': InspectionStatus.scheduled.index, // Update status when assigning agent
+        'updatedAt': Timestamp.now(),
       });
       return true;
     } catch (e) {
-      print('Error assigning agent to inspection: $e');
+      // print('Error assigning agent to inspection: $e'); // Removed print
       return false;
     }
   }

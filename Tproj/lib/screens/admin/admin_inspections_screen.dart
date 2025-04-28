@@ -15,7 +15,7 @@ class _AdminInspectionsScreenState extends State<AdminInspectionsScreen> {
   
   bool _isLoading = true;
   List<InspectionRequest> _inspectionRequests = [];
-  String _filterStatus = 'all'; // 'all', 'pending', 'in_progress', 'completed', 'cancelled'
+  String _filterStatus = 'all'; // 'all', 'pending', 'scheduled', 'inProgress', 'completed', 'reportUploaded', 'cancelled'
 
   @override
   void initState() {
@@ -52,7 +52,7 @@ class _AdminInspectionsScreenState extends State<AdminInspectionsScreen> {
   List<InspectionRequest> get _filteredRequests {
     return _inspectionRequests.where((request) {
       // Filter by status
-      if (_filterStatus != 'all' && request.status != _filterStatus) {
+      if (_filterStatus != 'all' && _getStatusString(request.status) != _filterStatus) {
         return false;
       }
       
@@ -97,12 +97,20 @@ class _AdminInspectionsScreenState extends State<AdminInspectionsScreen> {
                         child: Text('Pending'),
                       ),
                       DropdownMenuItem(
-                        value: 'in_progress',
+                        value: 'scheduled',
+                        child: Text('Scheduled'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'inProgress',
                         child: Text('In Progress'),
                       ),
                       DropdownMenuItem(
                         value: 'completed',
                         child: Text('Completed'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'reportUploaded',
+                        child: Text('Report Uploaded'),
                       ),
                       DropdownMenuItem(
                         value: 'cancelled',
@@ -165,19 +173,27 @@ class _AdminInspectionsScreenState extends State<AdminInspectionsScreen> {
     IconData statusIcon;
     
     switch (request.status) {
-      case 'pending':
+      case InspectionStatus.pending:
         statusColor = Colors.orange;
         statusIcon = Icons.hourglass_empty;
         break;
-      case 'in_progress':
+      case InspectionStatus.scheduled:
+        statusColor = Colors.blue;
+        statusIcon = Icons.calendar_today;
+        break;
+      case InspectionStatus.inProgress:
         statusColor = Colors.blue;
         statusIcon = Icons.directions_run;
         break;
-      case 'completed':
+      case InspectionStatus.completed:
         statusColor = Colors.green;
         statusIcon = Icons.check_circle;
         break;
-      case 'cancelled':
+      case InspectionStatus.reportUploaded:
+        statusColor = Colors.teal;
+        statusIcon = Icons.upload_file;
+        break;
+      case InspectionStatus.cancelled:
         statusColor = Colors.red;
         statusIcon = Icons.cancel;
         break;
@@ -205,9 +221,9 @@ class _AdminInspectionsScreenState extends State<AdminInspectionsScreen> {
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Request ID: ${request.id.substring(0, 8)}...'),
+            Text('Request ID: ${request.id.substring(0, min(8, request.id.length))}...'),
             Text(
-              'Status: ${request.status.toUpperCase()}',
+              'Status: ${_getStatusText(request.status)}',
               style: TextStyle(
                 color: statusColor,
                 fontWeight: FontWeight.bold,
@@ -228,11 +244,11 @@ class _AdminInspectionsScreenState extends State<AdminInspectionsScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 _buildInfoRow('Item Description', request.itemDescription),
-                _buildInfoRow('Location', request.location),
-                _buildInfoRow('Seller Contact', request.sellerContact),
+                if (request.location != null) _buildInfoRow('Location', request.location!),
+                if (request.sellerContact != null) _buildInfoRow('Seller Contact', request.sellerContact!),
                 _buildInfoRow('Created At', _formatDate(request.createdAt)),
                 _buildInfoRow('Updated At', _formatDate(request.updatedAt)),
-                _buildInfoRow('Assigned Agent', request.assignedAgentId ?? 'Not assigned'),
+                _buildInfoRow('Assigned Agent', request.agentId ?? 'Not assigned'),
                 
                 const SizedBox(height: 16),
                 Row(
@@ -301,7 +317,7 @@ class _AdminInspectionsScreenState extends State<AdminInspectionsScreen> {
   }
 
   void _showUpdateStatusDialog(InspectionRequest request) {
-    String selectedStatus = request.status;
+    InspectionStatus selectedStatus = request.status;
     
     showDialog(
       context: context,
@@ -310,53 +326,75 @@ class _AdminInspectionsScreenState extends State<AdminInspectionsScreen> {
           title: const Text('Update Inspection Status'),
           content: StatefulBuilder(
             builder: (context, setState) {
-              return Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text('Current Status: ${request.status.toUpperCase()}'),
-                  const SizedBox(height: 16),
-                  const Text('Select New Status:'),
-                  RadioListTile<String>(
-                    title: const Text('Pending'),
-                    value: 'pending',
-                    groupValue: selectedStatus,
-                    onChanged: (value) {
-                      setState(() {
-                        selectedStatus = value!;
-                      });
-                    },
-                  ),
-                  RadioListTile<String>(
-                    title: const Text('In Progress'),
-                    value: 'in_progress',
-                    groupValue: selectedStatus,
-                    onChanged: (value) {
-                      setState(() {
-                        selectedStatus = value!;
-                      });
-                    },
-                  ),
-                  RadioListTile<String>(
-                    title: const Text('Completed'),
-                    value: 'completed',
-                    groupValue: selectedStatus,
-                    onChanged: (value) {
-                      setState(() {
-                        selectedStatus = value!;
-                      });
-                    },
-                  ),
-                  RadioListTile<String>(
-                    title: const Text('Cancelled'),
-                    value: 'cancelled',
-                    groupValue: selectedStatus,
-                    onChanged: (value) {
-                      setState(() {
-                        selectedStatus = value!;
-                      });
-                    },
-                  ),
-                ],
+              return SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text('Current Status: ${_getStatusText(request.status)}'),
+                    const SizedBox(height: 16),
+                    const Text('Select New Status:'),
+                    RadioListTile<InspectionStatus>(
+                      title: const Text('Pending'),
+                      value: InspectionStatus.pending,
+                      groupValue: selectedStatus,
+                      onChanged: (value) {
+                        setState(() {
+                          selectedStatus = value!;
+                        });
+                      },
+                    ),
+                    RadioListTile<InspectionStatus>(
+                      title: const Text('Scheduled'),
+                      value: InspectionStatus.scheduled,
+                      groupValue: selectedStatus,
+                      onChanged: (value) {
+                        setState(() {
+                          selectedStatus = value!;
+                        });
+                      },
+                    ),
+                    RadioListTile<InspectionStatus>(
+                      title: const Text('In Progress'),
+                      value: InspectionStatus.inProgress,
+                      groupValue: selectedStatus,
+                      onChanged: (value) {
+                        setState(() {
+                          selectedStatus = value!;
+                        });
+                      },
+                    ),
+                    RadioListTile<InspectionStatus>(
+                      title: const Text('Completed'),
+                      value: InspectionStatus.completed,
+                      groupValue: selectedStatus,
+                      onChanged: (value) {
+                        setState(() {
+                          selectedStatus = value!;
+                        });
+                      },
+                    ),
+                    RadioListTile<InspectionStatus>(
+                      title: const Text('Report Uploaded'),
+                      value: InspectionStatus.reportUploaded,
+                      groupValue: selectedStatus,
+                      onChanged: (value) {
+                        setState(() {
+                          selectedStatus = value!;
+                        });
+                      },
+                    ),
+                    RadioListTile<InspectionStatus>(
+                      title: const Text('Cancelled'),
+                      value: InspectionStatus.cancelled,
+                      groupValue: selectedStatus,
+                      onChanged: (value) {
+                        setState(() {
+                          selectedStatus = value!;
+                        });
+                      },
+                    ),
+                  ],
+                ),
               );
             },
           ),
@@ -383,7 +421,7 @@ class _AdminInspectionsScreenState extends State<AdminInspectionsScreen> {
     );
   }
 
-  Future<void> _updateRequestStatus(InspectionRequest request, String newStatus) async {
+  Future<void> _updateRequestStatus(InspectionRequest request, InspectionStatus newStatus) async {
     if (request.status == newStatus) {
       return; // No change needed
     }
@@ -397,7 +435,7 @@ class _AdminInspectionsScreenState extends State<AdminInspectionsScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Inspection request status updated to ${newStatus.toUpperCase()}'
+            'Inspection request status updated to ${_getStatusText(newStatus)}'
           ),
         ),
       );
@@ -440,10 +478,10 @@ class _AdminInspectionsScreenState extends State<AdminInspectionsScreen> {
                         labelText: 'Inspection Request',
                       ),
                       items: _inspectionRequests
-                          .where((r) => r.status == 'pending')
+                          .where((r) => r.status == InspectionStatus.pending)
                           .map((r) => DropdownMenuItem(
                                 value: r.id,
-                                child: Text('${r.itemName} (${r.id.substring(0, 8)}...)'),
+                                child: Text('${r.itemName} (${r.id.substring(0, min(8, r.id.length))}...)'),
                               ))
                           .toList(),
                       onChanged: (value) {
@@ -490,7 +528,7 @@ class _AdminInspectionsScreenState extends State<AdminInspectionsScreen> {
                   onPressed: selectedRequest != null && selectedAgentId != null
                       ? () {
                           Navigator.pop(context);
-                          _assignAgentToRequest(selectedRequest!.id, selectedAgentId!);
+                          _assignAgentToRequest(selectedRequest!, selectedAgentId!);
                         }
                       : null,
                   style: ElevatedButton.styleFrom(
@@ -506,9 +544,9 @@ class _AdminInspectionsScreenState extends State<AdminInspectionsScreen> {
     );
   }
 
-  Future<void> _assignAgentToRequest(String requestId, String agentId) async {
+  Future<void> _assignAgentToRequest(InspectionRequest request, String agentId) async {
     try {
-      await _inspectionService.assignAgentToInspection(requestId, agentId);
+      await _inspectionService.assignAgentToInspection(request.id, agentId);
       
       // Reload requests to update the list
       _loadInspectionRequests();
@@ -526,5 +564,49 @@ class _AdminInspectionsScreenState extends State<AdminInspectionsScreen> {
         ),
       );
     }
+  }
+  
+  // Helper method to convert InspectionStatus enum to string for filtering
+  String _getStatusString(InspectionStatus status) {
+    switch (status) {
+      case InspectionStatus.pending:
+        return 'pending';
+      case InspectionStatus.scheduled:
+        return 'scheduled';
+      case InspectionStatus.inProgress:
+        return 'inProgress';
+      case InspectionStatus.completed:
+        return 'completed';
+      case InspectionStatus.reportUploaded:
+        return 'reportUploaded';
+      case InspectionStatus.cancelled:
+        return 'cancelled';
+      default:
+        return 'unknown';
+    }
+  }
+  
+  // Helper method to get display text for InspectionStatus
+  String _getStatusText(InspectionStatus status) {
+    switch (status) {
+      case InspectionStatus.pending:
+        return 'PENDING';
+      case InspectionStatus.scheduled:
+        return 'SCHEDULED';
+      case InspectionStatus.inProgress:
+        return 'IN PROGRESS';
+      case InspectionStatus.completed:
+        return 'COMPLETED';
+      case InspectionStatus.reportUploaded:
+        return 'REPORT UPLOADED';
+      case InspectionStatus.cancelled:
+        return 'CANCELLED';
+      default:
+        return 'UNKNOWN';
+    }
+  }
+  
+  int min(int a, int b) {
+    return a < b ? a : b;
   }
 }
