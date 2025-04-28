@@ -1,85 +1,87 @@
-// File: lib/models/inspection_report.dart
-class InspectionReport {
+enum InspectionStatus {
+  pending,
+  approved,
+  rejected,
+  completed
+}
+
+class InspectionRequest {
   final String id;
-  final String inspectionRequestId;
-  final String agentId;
-  final DateTime inspectionDate;
-  final String itemCondition;
-  final bool itemMatchesDescription;
-  final List<String> images;
-  final String comments;
-  final Map<String, dynamic> additionalDetails;
+  final String userId;
+  final String vehicleId;
+  final InspectionStatus status;
+  final DateTime requestedDate;
+  final DateTime? scheduledDate;
+  final String? inspectorId;
+  final String? notes;
   final DateTime createdAt;
   final DateTime updatedAt;
 
-  InspectionReport({
+  InspectionRequest({
     required this.id,
-    required this.inspectionRequestId,
-    required this.agentId,
-    required this.inspectionDate,
-    required this.itemCondition,
-    required this.itemMatchesDescription,
-    required this.images,
-    required this.comments,
-    required this.additionalDetails,
+    required this.userId,
+    required this.vehicleId,
+    required this.status,
+    required this.requestedDate,
+    this.scheduledDate,
+    this.inspectorId,
+    this.notes,
     required this.createdAt,
     required this.updatedAt,
   });
 
-  // Create an InspectionReport from a map (e.g., from Firestore)
-  factory InspectionReport.fromMap(Map<String, dynamic> map, String id) {
-    return InspectionReport(
+  factory InspectionRequest.fromMap(Map<String, dynamic> map, String id) {
+    return InspectionRequest(
       id: id,
-      inspectionRequestId: map['inspectionRequestId'] ?? '',
-      agentId: map['agentId'] ?? '',
-      inspectionDate: map['inspectionDate']?.toDate() ?? DateTime.now(),
-      itemCondition: map['itemCondition'] ?? '',
-      itemMatchesDescription: map['itemMatchesDescription'] ?? false,
-      images: List<String>.from(map['images'] ?? []),
-      comments: map['comments'] ?? '',
-      additionalDetails: Map<String, dynamic>.from(map['additionalDetails'] ?? {}),
+      userId: map['userId'] ?? '',
+      vehicleId: map['vehicleId'] ?? '',
+      status: InspectionStatus.values[map['status'] ?? 0],
+      requestedDate: map['requestedDate']?.toDate() ?? DateTime.now(),
+      scheduledDate: map['scheduledDate']?.toDate(),
+      inspectorId: map['inspectorId'],
+      notes: map['notes'],
       createdAt: map['createdAt']?.toDate() ?? DateTime.now(),
       updatedAt: map['updatedAt']?.toDate() ?? DateTime.now(),
     );
   }
 
-  // Convert InspectionReport to a map (e.g., for Firestore)
   Map<String, dynamic> toMap() {
     return {
-      'inspectionRequestId': inspectionRequestId,
-      'agentId': agentId,
-      'inspectionDate': inspectionDate,
-      'itemCondition': itemCondition,
-      'itemMatchesDescription': itemMatchesDescription,
-      'images': images,
-      'comments': comments,
-      'additionalDetails': additionalDetails,
+      'userId': userId,
+      'vehicleId': vehicleId,
+      'status': status.index,
+      'requestedDate': requestedDate,
+      'scheduledDate': scheduledDate,
+      'inspectorId': inspectorId,
+      'notes': notes,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
     };
   }
 
-  // Create a copy of InspectionReport with some fields updated
-  InspectionReport copyWith({
-    String? itemCondition,
-    bool? itemMatchesDescription,
-    List<String>? images,
-    String? comments,
-    Map<String, dynamic>? additionalDetails,
+  InspectionRequest copyWith({
+    String? id,
+    String? userId,
+    String? vehicleId,
+    InspectionStatus? status,
+    DateTime? requestedDate,
+    DateTime? scheduledDate,
+    String? inspectorId,
+    String? notes,
+    DateTime? createdAt,
     DateTime? updatedAt,
   }) {
-    return InspectionReport(
-      id: this.id,
-      inspectionRequestId: this.inspectionRequestId,
-      agentId: this.agentId,
-      inspectionDate: this.inspectionDate,
-      itemCondition: itemCondition ?? this.itemCondition,
-      itemMatchesDescription: itemMatchesDescription ?? this.itemMatchesDescription,
-      images: images ?? this.images,
-      comments: comments ?? this.comments,
-      additionalDetails: additionalDetails ?? this.additionalDetails,
-      createdAt: this.createdAt,
-      updatedAt: updatedAt ?? DateTime.now(),
+    return InspectionRequest(
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
+      vehicleId: vehicleId ?? this.vehicleId,
+      status: status ?? this.status,
+      requestedDate: requestedDate ?? this.requestedDate,
+      scheduledDate: scheduledDate ?? this.scheduledDate,
+      inspectorId: inspectorId ?? this.inspectorId,
+      notes: notes ?? this.notes,
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 }

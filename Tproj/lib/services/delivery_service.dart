@@ -1,11 +1,9 @@
-// File: lib/services/delivery_service.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/delivery_request.dart';
 
 class DeliveryService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
-  // Create a new delivery request
   Future<DeliveryRequest?> createDeliveryRequest({
     required String userId,
     String? inspectionRequestId,
@@ -19,7 +17,7 @@ class DeliveryService {
   }) async {
     try {
       final requestData = DeliveryRequest(
-        id: '', // Will be set after document creation
+        id: '',
         userId: userId,
         inspectionRequestId: inspectionRequestId,
         itemName: itemName,
@@ -43,7 +41,6 @@ class DeliveryService {
     }
   }
 
-  // Get all delivery requests for a user
   Stream<List<DeliveryRequest>> getUserDeliveryRequests(String userId) {
     return _firestore
         .collection('deliveryRequests')
@@ -57,7 +54,6 @@ class DeliveryService {
     });
   }
 
-  // Get a specific delivery request
   Future<DeliveryRequest?> getDeliveryRequest(String requestId) async {
     try {
       final doc = await _firestore.collection('deliveryRequests').doc(requestId).get();
@@ -71,7 +67,6 @@ class DeliveryService {
     }
   }
 
-  // Update a delivery request
   Future<bool> updateDeliveryRequest({
     required String requestId,
     String? itemName,
@@ -112,7 +107,6 @@ class DeliveryService {
     }
   }
 
-  // Create delivery request from inspection
   Future<DeliveryRequest?> createDeliveryFromInspection({
     required String inspectionRequestId,
     required String userId,
@@ -123,9 +117,7 @@ class DeliveryService {
     required double price,
   }) async {
     try {
-      // Estimated delivery date is 7 days from now
       final estimatedDeliveryDate = DateTime.now().add(const Duration(days: 7));
-      
       return createDeliveryRequest(
         userId: userId,
         inspectionRequestId: inspectionRequestId,
@@ -142,7 +134,6 @@ class DeliveryService {
     }
   }
 
-  // Update delivery status
   Future<bool> updateDeliveryStatus(String requestId, DeliveryStatus status) async {
     return updateDeliveryRequest(
       requestId: requestId,
@@ -150,7 +141,6 @@ class DeliveryService {
     );
   }
 
-  // Cancel delivery request
   Future<bool> cancelDeliveryRequest(String requestId) async {
     try {
       await updateDeliveryRequest(
@@ -164,11 +154,33 @@ class DeliveryService {
     }
   }
 
-  // Add tracking number to delivery
   Future<bool> addTrackingNumber(String requestId, String trackingNumber) async {
     return updateDeliveryRequest(
       requestId: requestId,
       trackingNumber: trackingNumber,
     );
+  }
+
+  Future<List<DeliveryRequest>> getAllDeliveryRequests() async {
+    try {
+      final snapshot = await _firestore.collection('deliveryRequests').get();
+      return snapshot.docs.map((doc) => DeliveryRequest.fromMap(doc.data(), doc.id)).toList();
+    } catch (e) {
+      print('Error getting all delivery requests: $e');
+      return [];
+    }
+  }
+
+  Future<bool> assignAgentToDelivery(String requestId, String agentId) async {
+    try {
+      await _firestore.collection('deliveryRequests').doc(requestId).update({
+        'deliveryAgentId': agentId,
+        'updatedAt': DateTime.now(),
+      });
+      return true;
+    } catch (e) {
+      print('Error assigning agent to delivery: $e');
+      return false;
+    }
   }
 }

@@ -1,4 +1,3 @@
-// File: lib/screens/inspections/inspection_detail_screen.dart
 import 'package:flutter/material.dart';
 import '../../widgets/custom_app_bar.dart';
 import '../../widgets/bottom_nav_bar.dart';
@@ -10,7 +9,9 @@ import '../../models/inspection_report.dart';
 import '../../utils/navigation.dart';
 
 class InspectionDetailScreen extends StatefulWidget {
-  const InspectionDetailScreen({super.key});
+  final String inspectionId;
+
+  const InspectionDetailScreen({super.key, required this.inspectionId});
 
   @override
   State<InspectionDetailScreen> createState() => _InspectionDetailScreenState();
@@ -22,33 +23,21 @@ class _InspectionDetailScreenState extends State<InspectionDetailScreen> {
   bool _isLoading = false;
   InspectionRequest? _inspectionRequest;
   InspectionReport? _inspectionReport;
-  String? _requestId;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Get the inspection request ID from the route arguments
-    final args = ModalRoute.of(context)?.settings.arguments;
-    if (args != null && args is String && args != _requestId) {
-      _requestId = args;
-      _loadInspectionDetails();
-    } else if (_requestId == null) {
-      // For demo purposes, use a placeholder ID
-      _requestId = 'placeholder_inspection_id';
-      _loadInspectionDetails();
-    }
+  void initState() {
+    super.initState();
+    _loadInspectionDetails();
   }
 
   Future<void> _loadInspectionDetails() async {
-    if (_requestId == null) return;
-
     setState(() {
       _isLoading = true;
     });
 
     try {
-      final request = await _inspectionService.getInspectionRequest(_requestId!);
-      final report = await _inspectionService.getInspectionReport(_requestId!);
+      final request = await _inspectionService.getInspectionRequest(widget.inspectionId);
+      final report = await _inspectionService.getInspectionReport(widget.inspectionId);
 
       if (mounted) {
         setState(() {
@@ -77,21 +66,18 @@ class _InspectionDetailScreenState extends State<InspectionDetailScreen> {
     });
 
     try {
-      // In a real implementation, this would use the current user's ID
       const userId = 'current_user_id';
-
       final deliveryRequest = await _deliveryService.createDeliveryFromInspection(
         inspectionRequestId: _inspectionRequest!.id,
         userId: userId,
         itemName: _inspectionRequest!.itemName,
         itemDescription: _inspectionRequest!.itemDescription,
         pickupLocation: _inspectionRequest!.location ?? 'Unknown location',
-        deliveryLocation: 'User address', // This would be the user's address in a real implementation
+        deliveryLocation: 'User address',
         price: _inspectionRequest!.price ?? 0.0,
       );
 
       if (deliveryRequest != null && mounted) {
-        // Navigate to delivery detail screen
         NavigationUtils.navigateTo(
           context,
           AppRoutes.deliveryDetail,
@@ -128,7 +114,6 @@ class _InspectionDetailScreenState extends State<InspectionDetailScreen> {
       final success = await _inspectionService.cancelInspectionRequest(_inspectionRequest!.id);
 
       if (success && mounted) {
-        // Show success message and go back
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Inspection case closed successfully')),
         );
@@ -166,7 +151,6 @@ class _InspectionDetailScreenState extends State<InspectionDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Title
                       Text(
                         'Inspection request for ${_inspectionRequest!.itemName}',
                         style: const TextStyle(
@@ -176,8 +160,6 @@ class _InspectionDetailScreenState extends State<InspectionDetailScreen> {
                         ),
                       ),
                       const SizedBox(height: 24),
-
-                      // Timeline Section
                       _buildTimelineStep(
                         context,
                         isActive: true,
@@ -209,15 +191,11 @@ class _InspectionDetailScreenState extends State<InspectionDetailScreen> {
                         subtitle: '',
                         description: 'The final inspection report has been uploaded and is available for review.',
                       ),
-
                       const SizedBox(height: 24),
-                      
-                      // Download Report Button
                       Center(
                         child: ElevatedButton(
                           onPressed: _inspectionReport != null
                               ? () {
-                                  // Add download report logic
                                   ScaffoldMessenger.of(context).showSnackBar(
                                     const SnackBar(content: Text('Downloading report...')),
                                   );
@@ -235,10 +213,7 @@ class _InspectionDetailScreenState extends State<InspectionDetailScreen> {
                           child: const Text('Download report'),
                         ),
                       ),
-                      
                       const SizedBox(height: 24),
-                      
-                      // Action Buttons
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
@@ -279,10 +254,7 @@ class _InspectionDetailScreenState extends State<InspectionDetailScreen> {
                           ),
                         ],
                       ),
-                      
                       const SizedBox(height: 24),
-                      
-                      // Contact Section
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -338,7 +310,6 @@ class _InspectionDetailScreenState extends State<InspectionDetailScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Circle indicator
         Container(
           width: 25,
           height: 25,
@@ -346,43 +317,24 @@ class _InspectionDetailScreenState extends State<InspectionDetailScreen> {
             color: isActive ? Colors.blue : Colors.grey,
             shape: BoxShape.circle,
           ),
-          child: isActive
-              ? const Icon(Icons.check, color: Colors.white, size: 16)
-              : null,
+          child: isActive ? const Icon(Icons.check, color: Colors.white, size: 16) : null,
         ),
         const SizedBox(width: 16),
-        // Content
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 title,
-                style: const TextStyle(
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black,
-                ),
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.black),
               ),
               if (subtitle.isNotEmpty) ...[
                 const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.black,
-                  ),
-                ),
+                Text(subtitle, style: const TextStyle(fontSize: 14, color: Colors.black)),
               ],
               if (description.isNotEmpty) ...[
                 const SizedBox(height: 4),
-                Text(
-                  description,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[700],
-                  ),
-                ),
+                Text(description, style: TextStyle(fontSize: 12, color: Colors.grey[700])),
               ],
               const SizedBox(height: 8),
             ],

@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../models/user.dart';
-import '../../services/auth_service.dart';
 
 class SignupConfirmationScreen extends StatefulWidget {
   final User user;
@@ -18,7 +16,6 @@ class _SignupConfirmationScreenState extends State<SignupConfirmationScreen> {
   @override
   void initState() {
     super.initState();
-    // Start the countdown to redirect after 2 seconds
     _startRedirectCountdown();
   }
 
@@ -27,12 +24,8 @@ class _SignupConfirmationScreenState extends State<SignupConfirmationScreen> {
       setState(() {
         _redirecting = true;
       });
-      
-      // Wait for 2 seconds before redirecting
       await Future.delayed(const Duration(seconds: 2));
-      
       if (mounted) {
-        // Navigate to home screen and remove all previous routes
         Navigator.of(context).pushNamedAndRemoveUntil('/home', (route) => false);
       }
     }
@@ -57,46 +50,27 @@ class _SignupConfirmationScreenState extends State<SignupConfirmationScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             const SizedBox(height: 80),
-            // Success icon
-            Icon(
-              Icons.check_circle_outline,
-              size: 100,
-              color: Colors.white,
-            ),
+            const Icon(Icons.check_circle_outline, size: 100, color: Colors.white),
             const SizedBox(height: 20),
-            // Welcome message
             Text(
-              'Welcome, ${widget.user.name}!',
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-              ),
+              'Welcome, ${widget.user.username}!',
+              style: const TextStyle(color: Colors.white, fontSize: 28, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 10),
-            // Success message
             const Padding(
               padding: EdgeInsets.symmetric(horizontal: 20),
               child: Text(
                 'Your account has been created successfully.',
                 textAlign: TextAlign.center,
-                style: TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                ),
+                style: TextStyle(color: Colors.white, fontSize: 18),
               ),
             ),
             const SizedBox(height: 20),
-            // Redirecting message
             const Text(
               'Redirecting to home page...',
-              style: TextStyle(
-                color: Colors.white70,
-                fontSize: 16,
-              ),
+              style: TextStyle(color: Colors.white70, fontSize: 16),
             ),
             const SizedBox(height: 40),
-            // Loading indicator
             const CircularProgressIndicator(
               valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
             ),

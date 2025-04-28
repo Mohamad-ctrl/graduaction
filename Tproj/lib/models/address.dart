@@ -1,4 +1,3 @@
-// File: lib/models/address.dart
 class Address {
   final String id;
   final String userId;
@@ -9,6 +8,7 @@ class Address {
   final String state;
   final String country;
   final String postalCode;
+  final String? phone; // Added to resolve missing property errors
   final bool isDefault;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -23,12 +23,12 @@ class Address {
     required this.state,
     required this.country,
     required this.postalCode,
+    this.phone,
     this.isDefault = false,
     required this.createdAt,
     required this.updatedAt,
   });
 
-  // Create an Address from a map (e.g., from Firestore)
   factory Address.fromMap(Map<String, dynamic> map, String id) {
     return Address(
       id: id,
@@ -40,13 +40,13 @@ class Address {
       state: map['state'] ?? '',
       country: map['country'] ?? '',
       postalCode: map['postalCode'] ?? '',
+      phone: map['phone'], // Included in fromMap
       isDefault: map['isDefault'] ?? false,
       createdAt: map['createdAt']?.toDate() ?? DateTime.now(),
       updatedAt: map['updatedAt']?.toDate() ?? DateTime.now(),
     );
   }
 
-  // Convert Address to a map (e.g., for Firestore)
   Map<String, dynamic> toMap() {
     return {
       'userId': userId,
@@ -57,14 +57,16 @@ class Address {
       'state': state,
       'country': country,
       'postalCode': postalCode,
+      'phone': phone, // Included in toMap
       'isDefault': isDefault,
       'createdAt': createdAt,
       'updatedAt': updatedAt,
     };
   }
 
-  // Create a copy of Address with some fields updated
   Address copyWith({
+    String? id,
+    String? userId,
     String? name,
     String? addressLine1,
     String? addressLine2,
@@ -72,12 +74,14 @@ class Address {
     String? state,
     String? country,
     String? postalCode,
+    String? phone,
     bool? isDefault,
+    DateTime? createdAt,
     DateTime? updatedAt,
   }) {
     return Address(
-      id: this.id,
-      userId: this.userId,
+      id: id ?? this.id, // Added id parameter to fix copyWith errors
+      userId: userId ?? this.userId,
       name: name ?? this.name,
       addressLine1: addressLine1 ?? this.addressLine1,
       addressLine2: addressLine2 ?? this.addressLine2,
@@ -85,9 +89,10 @@ class Address {
       state: state ?? this.state,
       country: country ?? this.country,
       postalCode: postalCode ?? this.postalCode,
+      phone: phone ?? this.phone,
       isDefault: isDefault ?? this.isDefault,
-      createdAt: this.createdAt,
-      updatedAt: updatedAt ?? DateTime.now(),
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 }

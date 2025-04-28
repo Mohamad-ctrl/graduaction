@@ -1,4 +1,3 @@
-// File: lib/services/inspection_service.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:io';
 import '../models/inspection_request.dart';
@@ -9,10 +8,8 @@ class InspectionService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final SupabaseStorageService _storageService = SupabaseStorageService();
   
-  // Bucket name for inspection images
   static const String _bucketName = 'inspection-images';
 
-  // Create a new inspection request
   Future<InspectionRequest?> createInspectionRequest({
     required String userId,
     required String itemName,
@@ -25,7 +22,7 @@ class InspectionService {
   }) async {
     try {
       final requestData = InspectionRequest(
-        id: '', // Will be set after document creation
+        id: '',
         userId: userId,
         itemName: itemName,
         itemDescription: itemDescription,
@@ -48,7 +45,6 @@ class InspectionService {
     }
   }
 
-  // Get all inspection requests for a user
   Stream<List<InspectionRequest>> getUserInspectionRequests(String userId) {
     return _firestore
         .collection('inspectionRequests')
@@ -62,7 +58,6 @@ class InspectionService {
     });
   }
 
-  // Get a specific inspection request
   Future<InspectionRequest?> getInspectionRequest(String requestId) async {
     try {
       final doc = await _firestore.collection('inspectionRequests').doc(requestId).get();
@@ -76,7 +71,6 @@ class InspectionService {
     }
   }
 
-  // Update an inspection request
   Future<bool> updateInspectionRequest({
     required String requestId,
     String? itemName,
@@ -115,16 +109,13 @@ class InspectionService {
     }
   }
 
-  // Upload inspection images
   Future<List<String>> uploadInspectionImages(String requestId, List<File> images) async {
     try {
-      // Upload images to Supabase Storage
       final imageUrls = await _storageService.uploadFiles(
         bucketName: _bucketName,
         path: requestId,
         files: images,
       );
-      
       return imageUrls;
     } catch (e) {
       print('Error uploading inspection images: $e');
@@ -132,7 +123,6 @@ class InspectionService {
     }
   }
 
-  // Create inspection report
   Future<InspectionReport?> createInspectionReport({
     required String inspectionRequestId,
     required String agentId,
@@ -143,14 +133,13 @@ class InspectionService {
     required Map<String, dynamic> additionalDetails,
   }) async {
     try {
-      // Update inspection request status
       await updateInspectionRequest(
         requestId: inspectionRequestId,
         status: InspectionStatus.reportUploaded,
       );
       
       final reportData = InspectionReport(
-        id: '', // Will be set after document creation
+        id: '',
         inspectionRequestId: inspectionRequestId,
         agentId: agentId,
         inspectionDate: DateTime.now(),
@@ -171,7 +160,6 @@ class InspectionService {
     }
   }
 
-  // Get inspection report for a request
   Future<InspectionReport?> getInspectionReport(String requestId) async {
     try {
       final querySnapshot = await _firestore
@@ -191,7 +179,6 @@ class InspectionService {
     }
   }
 
-  // Cancel inspection request
   Future<bool> cancelInspectionRequest(String requestId) async {
     try {
       await updateInspectionRequest(
@@ -201,6 +188,42 @@ class InspectionService {
       return true;
     } catch (e) {
       print('Error cancelling inspection request: $e');
+      return false;
+    }
+  }
+
+  Future<List<InspectionRequest>> getAllInspectionRequests() async {
+    try {
+      final snapshot = await _firestore.collection('inspectionRequests').get();
+      return snapshot.docs.map((doc) => InspectionRequest.fromMap(doc.data(), doc.id)).toList();
+    } catch (e) {
+      print('Error getting all inspection requests: $e');
+      return [];
+    }
+  }
+
+  Future<bool> updateInspectionStatus(String requestId, InspectionStatus status) async {
+    try {
+      await _firestore.collection('inspectionRequests').doc(requestId).update({
+        'status': status.index,
+        'updatedAt': DateTime.now(),
+      });
+      return true;
+    } catch (e) {
+      print('Error updating inspection status: $e');
+      return false;
+    }
+  }
+
+  Future<bool> assignAgentToInspection(String requestId, String agentId) async {
+    try {
+      await _firestore.collection('inspectionRequests').doc(requestId).update({
+        'agentId': agentId,
+        'updatedAt': DateTime.now(),
+      });
+      return true;
+    } catch (e) {
+      print('Error assigning agent to inspection: $e');
       return false;
     }
   }

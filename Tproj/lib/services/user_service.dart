@@ -1,4 +1,3 @@
-// File: lib/services/user_service.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'dart:io';
 import '../models/user.dart';
@@ -10,10 +9,8 @@ class UserService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final SupabaseStorageService _storageService = SupabaseStorageService();
   
-  // Bucket name for user profile images
   static const String _bucketName = 'user-profiles';
 
-  // Get user by ID
   Future<User?> getUserById(String userId) async {
     try {
       final doc = await _firestore.collection('users').doc(userId).get();
@@ -27,7 +24,12 @@ class UserService {
     }
   }
 
-  // Update user profile
+  Future<User?> getCurrentUser() async {
+    // TODO: Replace with actual user ID retrieval (e.g., from auth service)
+    final userId = 'current_user_id';
+    return getUserById(userId);
+  }
+
   Future<bool> updateUserProfile({
     required String userId,
     String? username,
@@ -46,10 +48,8 @@ class UserService {
     }
   }
 
-  // Upload profile image
   Future<String?> uploadProfileImage(String userId, File imageFile) async {
     try {
-      // Upload image to Supabase Storage
       final url = await _storageService.uploadFile(
         bucketName: _bucketName,
         path: userId,
@@ -57,13 +57,11 @@ class UserService {
       );
       
       if (url != null) {
-        // Update user profile with image URL
         await _firestore.collection('users').doc(userId).update({
           'profileImageUrl': url,
           'updatedAt': DateTime.now(),
         });
       }
-      
       return url;
     } catch (e) {
       print('Error uploading profile image: $e');
@@ -71,7 +69,6 @@ class UserService {
     }
   }
 
-  // Add address
   Future<Address?> addAddress({
     required String userId,
     required String name,
@@ -81,10 +78,10 @@ class UserService {
     required String state,
     required String country,
     required String postalCode,
+    String? phone,
     bool isDefault = false,
   }) async {
     try {
-      // If this is the default address, update all other addresses to non-default
       if (isDefault) {
         final querySnapshot = await _firestore
             .collection('addresses')
@@ -98,7 +95,7 @@ class UserService {
       }
       
       final addressData = Address(
-        id: '', // Will be set after document creation
+        id: '',
         userId: userId,
         name: name,
         addressLine1: addressLine1,
@@ -107,18 +104,16 @@ class UserService {
         state: state,
         country: country,
         postalCode: postalCode,
+        phone: phone,
         isDefault: isDefault,
         createdAt: DateTime.now(),
         updatedAt: DateTime.now(),
       );
 
       final docRef = await _firestore.collection('addresses').add(addressData.toMap());
-      
-      // Add address ID to user's addresses list
       await _firestore.collection('users').doc(userId).update({
         'addresses': FieldValue.arrayUnion([docRef.id]),
       });
-      
       return addressData.copyWith(id: docRef.id);
     } catch (e) {
       print('Error adding address: $e');
@@ -126,14 +121,12 @@ class UserService {
     }
   }
 
-  // Get user addresses
   Future<List<Address>> getUserAddresses(String userId) async {
     try {
       final querySnapshot = await _firestore
           .collection('addresses')
           .where('userId', isEqualTo: userId)
           .get();
-      
       return querySnapshot.docs.map((doc) {
         return Address.fromMap(doc.data(), doc.id);
       }).toList();
@@ -143,7 +136,6 @@ class UserService {
     }
   }
 
-  // Update address
   Future<bool> updateAddress({
     required String addressId,
     String? name,
@@ -153,6 +145,7 @@ class UserService {
     String? state,
     String? country,
     String? postalCode,
+    String? phone,
     bool? isDefault,
   }) async {
     try {
@@ -162,8 +155,6 @@ class UserService {
       if (!addressDoc.exists) return false;
       
       final address = Address.fromMap(addressDoc.data()!, addressDoc.id);
-      
-      // If setting as default, update all other addresses to non-default
       if (isDefault == true && !address.isDefault) {
         final querySnapshot = await _firestore
             .collection('addresses')
@@ -184,6 +175,7 @@ class UserService {
         state: state,
         country: country,
         postalCode: postalCode,
+        phone: phone,
         isDefault: isDefault,
         updatedAt: DateTime.now(),
       );
@@ -196,7 +188,6 @@ class UserService {
     }
   }
 
-  // Delete address
   Future<bool> deleteAddress(String addressId) async {
     try {
       final addressRef = _firestore.collection('addresses').doc(addressId);
@@ -205,13 +196,9 @@ class UserService {
       if (!addressDoc.exists) return false;
       
       final address = Address.fromMap(addressDoc.data()!, addressDoc.id);
-      
-      // Remove address ID from user's addresses list
       await _firestore.collection('users').doc(address.userId).update({
         'addresses': FieldValue.arrayRemove([addressId]),
       });
-      
-      // Delete address document
       await addressRef.delete();
       return true;
     } catch (e) {
@@ -220,7 +207,6 @@ class UserService {
     }
   }
 
-  // Add payment method
   Future<PaymentMethod?> addPaymentMethod({
     required String userId,
     required PaymentMethodType type,
@@ -231,7 +217,6 @@ class UserService {
     bool isDefault = false,
   }) async {
     try {
-      // If this is the default payment method, update all other payment methods to non-default
       if (isDefault) {
         final querySnapshot = await _firestore
             .collection('paymentMethods')
@@ -245,7 +230,7 @@ class UserService {
       }
       
       final paymentMethodData = PaymentMethod(
-        id: '', // Will be set after document creation
+        id: '',
         userId: userId,
         type: type,
         name: name,
@@ -258,12 +243,9 @@ class UserService {
       );
 
       final docRef = await _firestore.collection('paymentMethods').add(paymentMethodData.toMap());
-      
-      // Add payment method ID to user's payment methods list
       await _firestore.collection('users').doc(userId).update({
         'paymentMethods': FieldValue.arrayUnion([docRef.id]),
       });
-      
       return paymentMethodData.copyWith(id: docRef.id);
     } catch (e) {
       print('Error adding payment method: $e');
@@ -271,14 +253,12 @@ class UserService {
     }
   }
 
-  // Get user payment methods
   Future<List<PaymentMethod>> getUserPaymentMethods(String userId) async {
     try {
       final querySnapshot = await _firestore
           .collection('paymentMethods')
           .where('userId', isEqualTo: userId)
           .get();
-      
       return querySnapshot.docs.map((doc) {
         return PaymentMethod.fromMap(doc.data(), doc.id);
       }).toList();
@@ -288,7 +268,6 @@ class UserService {
     }
   }
 
-  // Delete payment method
   Future<bool> deletePaymentMethod(String paymentMethodId) async {
     try {
       final paymentMethodRef = _firestore.collection('paymentMethods').doc(paymentMethodId);
@@ -297,13 +276,9 @@ class UserService {
       if (!paymentMethodDoc.exists) return false;
       
       final paymentMethod = PaymentMethod.fromMap(paymentMethodDoc.data()!, paymentMethodDoc.id);
-      
-      // Remove payment method ID from user's payment methods list
       await _firestore.collection('users').doc(paymentMethod.userId).update({
         'paymentMethods': FieldValue.arrayRemove([paymentMethodId]),
       });
-      
-      // Delete payment method document
       await paymentMethodRef.delete();
       return true;
     } catch (e) {

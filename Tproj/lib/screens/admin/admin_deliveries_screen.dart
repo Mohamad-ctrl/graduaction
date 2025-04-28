@@ -29,6 +29,7 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
     });
     
     try {
+      // TODO: Fix undefined method once delivery_service.dart is provided
       final requests = await _deliveryService.getAllDeliveryRequests();
       
       if (mounted) {
@@ -52,7 +53,7 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
   List<DeliveryRequest> get _filteredRequests {
     return _deliveryRequests.where((request) {
       // Filter by status
-      if (_filterStatus != 'all' && request.status != _filterStatus) {
+      if (_filterStatus != 'all' && request.status.toString().split('.').last != _filterStatus) {
         return false;
       }
       
@@ -97,12 +98,20 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
                         child: Text('Pending'),
                       ),
                       DropdownMenuItem(
-                        value: 'in_progress',
-                        child: Text('In Progress'),
+                        value: 'itemPickedUp',
+                        child: Text('Item Picked Up'),
                       ),
                       DropdownMenuItem(
-                        value: 'completed',
-                        child: Text('Completed'),
+                        value: 'shipped',
+                        child: Text('Shipped'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'outForDelivery',
+                        child: Text('Out for Delivery'),
+                      ),
+                      DropdownMenuItem(
+                        value: 'delivered',
+                        child: Text('Delivered'),
                       ),
                       DropdownMenuItem(
                         value: 'cancelled',
@@ -165,19 +174,27 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
     IconData statusIcon;
     
     switch (request.status) {
-      case 'pending':
+      case DeliveryStatus.pending:
         statusColor = Colors.orange;
         statusIcon = Icons.hourglass_empty;
         break;
-      case 'in_progress':
+      case DeliveryStatus.itemPickedUp:
         statusColor = Colors.blue;
         statusIcon = Icons.directions_run;
         break;
-      case 'completed':
+      case DeliveryStatus.shipped:
+        statusColor = Colors.indigo;
+        statusIcon = Icons.local_shipping;
+        break;
+      case DeliveryStatus.outForDelivery:
+        statusColor = Colors.purple;
+        statusIcon = Icons.directions_bike;
+        break;
+      case DeliveryStatus.delivered:
         statusColor = Colors.green;
         statusIcon = Icons.check_circle;
         break;
-      case 'cancelled':
+      case DeliveryStatus.cancelled:
         statusColor = Colors.red;
         statusIcon = Icons.cancel;
         break;
@@ -197,7 +214,7 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
           ),
         ),
         title: Text(
-          request.packageName,
+          request.itemName,
           style: const TextStyle(
             fontWeight: FontWeight.bold,
           ),
@@ -207,7 +224,7 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
           children: [
             Text('Request ID: ${request.id.substring(0, 8)}...'),
             Text(
-              'Status: ${request.status.toUpperCase()}',
+              'Status: ${_getStatusText(request.status)}',
               style: TextStyle(
                 color: statusColor,
                 fontWeight: FontWeight.bold,
@@ -227,12 +244,12 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                _buildInfoRow('Package Description', request.packageDescription),
+                _buildInfoRow('Item Description', request.itemDescription),
                 _buildInfoRow('Pickup Location', request.pickupLocation),
                 _buildInfoRow('Delivery Location', request.deliveryLocation),
                 _buildInfoRow('Created At', _formatDate(request.createdAt)),
                 _buildInfoRow('Updated At', _formatDate(request.updatedAt)),
-                _buildInfoRow('Assigned Agent', request.assignedAgentId ?? 'Not assigned'),
+                _buildInfoRow('Assigned Agent', request.deliveryAgentId ?? 'Not assigned'),
                 
                 const SizedBox(height: 16),
                 Row(
@@ -301,7 +318,7 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
   }
 
   void _showUpdateStatusDialog(DeliveryRequest request) {
-    String selectedStatus = request.status;
+    String selectedStatus = _getStatusString(request.status);
     
     showDialog(
       context: context,
@@ -313,7 +330,7 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
               return Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text('Current Status: ${request.status.toUpperCase()}'),
+                  Text('Current Status: ${_getStatusText(request.status)}'),
                   const SizedBox(height: 16),
                   const Text('Select New Status:'),
                   RadioListTile<String>(
@@ -327,8 +344,8 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
                     },
                   ),
                   RadioListTile<String>(
-                    title: const Text('In Progress'),
-                    value: 'in_progress',
+                    title: const Text('Item Picked Up'),
+                    value: 'itemPickedUp',
                     groupValue: selectedStatus,
                     onChanged: (value) {
                       setState(() {
@@ -337,8 +354,28 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
                     },
                   ),
                   RadioListTile<String>(
-                    title: const Text('Completed'),
-                    value: 'completed',
+                    title: const Text('Shipped'),
+                    value: 'shipped',
+                    groupValue: selectedStatus,
+                    onChanged: (value) {
+                      setState(() {
+                        selectedStatus = value!;
+                      });
+                    },
+                  ),
+                  RadioListTile<String>(
+                    title: const Text('Out for Delivery'),
+                    value: 'outForDelivery',
+                    groupValue: selectedStatus,
+                    onChanged: (value) {
+                      setState(() {
+                        selectedStatus = value!;
+                      });
+                    },
+                  ),
+                  RadioListTile<String>(
+                    title: const Text('Delivered'),
+                    value: 'delivered',
                     groupValue: selectedStatus,
                     onChanged: (value) {
                       setState(() {
@@ -383,12 +420,48 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
     );
   }
 
-  Future<void> _updateRequestStatus(DeliveryRequest request, String newStatus) async {
+  String _getStatusString(DeliveryStatus status) {
+    switch (status) {
+      case DeliveryStatus.pending:
+        return 'pending';
+      case DeliveryStatus.itemPickedUp:
+        return 'itemPickedUp';
+      case DeliveryStatus.shipped:
+        return 'shipped';
+      case DeliveryStatus.outForDelivery:
+        return 'outForDelivery';
+      case DeliveryStatus.delivered:
+        return 'delivered';
+      case DeliveryStatus.cancelled:
+        return 'cancelled';
+    }
+  }
+
+  String _getStatusText(DeliveryStatus status) {
+    switch (status) {
+      case DeliveryStatus.pending:
+        return 'PENDING';
+      case DeliveryStatus.itemPickedUp:
+        return 'ITEM PICKED UP';
+      case DeliveryStatus.shipped:
+        return 'SHIPPED';
+      case DeliveryStatus.outForDelivery:
+        return 'OUT FOR DELIVERY';
+      case DeliveryStatus.delivered:
+        return 'DELIVERED';
+      case DeliveryStatus.cancelled:
+        return 'CANCELLED';
+    }
+  }
+
+  Future<void> _updateRequestStatus(DeliveryRequest request, String newStatusString) async {
+    final newStatus = _getDeliveryStatusFromString(newStatusString);
     if (request.status == newStatus) {
       return; // No change needed
     }
     
     try {
+      // TODO: Fix once delivery_service.dart is provided
       await _deliveryService.updateDeliveryStatus(request.id, newStatus);
       
       // Reload requests to update the list
@@ -397,7 +470,7 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
-            'Delivery request status updated to ${newStatus.toUpperCase()}'
+            'Delivery request status updated to ${_getStatusText(newStatus)}'
           ),
         ),
       );
@@ -408,6 +481,25 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
           backgroundColor: Colors.red,
         ),
       );
+    }
+  }
+
+  DeliveryStatus _getDeliveryStatusFromString(String statusString) {
+    switch (statusString) {
+      case 'pending':
+        return DeliveryStatus.pending;
+      case 'itemPickedUp':
+        return DeliveryStatus.itemPickedUp;
+      case 'shipped':
+        return DeliveryStatus.shipped;
+      case 'outForDelivery':
+        return DeliveryStatus.outForDelivery;
+      case 'delivered':
+        return DeliveryStatus.delivered;
+      case 'cancelled':
+        return DeliveryStatus.cancelled;
+      default:
+        return DeliveryStatus.pending;
     }
   }
 
@@ -440,10 +532,10 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
                         labelText: 'Delivery Request',
                       ),
                       items: _deliveryRequests
-                          .where((r) => r.status == 'pending')
+                          .where((r) => r.status == DeliveryStatus.pending)
                           .map((r) => DropdownMenuItem(
                                 value: r.id,
-                                child: Text('${r.packageName} (${r.id.substring(0, 8)}...)'),
+                                child: Text('${r.itemName} (${r.id.substring(0, 8)}...)'),
                               ))
                           .toList(),
                       onChanged: (value) {
@@ -456,7 +548,7 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
                   ],
                   
                   if (selectedRequest != null) ...[
-                    Text('Assigning agent to: ${selectedRequest!.packageName}'),
+                    Text('Assigning agent to: ${selectedRequest!.itemName}'),
                     const SizedBox(height: 16),
                   ],
                   
@@ -508,6 +600,7 @@ class _AdminDeliveriesScreenState extends State<AdminDeliveriesScreen> {
 
   Future<void> _assignAgentToRequest(String requestId, String agentId) async {
     try {
+      // TODO: Fix once delivery_service.dart is provided
       await _deliveryService.assignAgentToDelivery(requestId, agentId);
       
       // Reload requests to update the list

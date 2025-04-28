@@ -1,4 +1,3 @@
-// File: lib/models/payment_method.dart
 enum PaymentMethodType {
   creditCard,
   debitCard,
@@ -11,7 +10,7 @@ class PaymentMethod {
   final String userId;
   final PaymentMethodType type;
   final String name;
-  final String? cardNumber; // Last 4 digits only for security
+  final String? cardNumber;
   final String? cardHolderName;
   final String? expiryDate;
   final bool isDefault;
@@ -31,7 +30,6 @@ class PaymentMethod {
     required this.updatedAt,
   });
 
-  // Create a PaymentMethod from a map (e.g., from Firestore)
   factory PaymentMethod.fromMap(Map<String, dynamic> map, String id) {
     return PaymentMethod(
       id: id,
@@ -47,7 +45,6 @@ class PaymentMethod {
     );
   }
 
-  // Convert PaymentMethod to a map (e.g., for Firestore)
   Map<String, dynamic> toMap() {
     return {
       'userId': userId,
@@ -62,27 +59,29 @@ class PaymentMethod {
     };
   }
 
-  // Create a copy of PaymentMethod with some fields updated
   PaymentMethod copyWith({
+    String? id,
+    String? userId,
     PaymentMethodType? type,
     String? name,
     String? cardNumber,
     String? cardHolderName,
     String? expiryDate,
     bool? isDefault,
+    DateTime? createdAt,
     DateTime? updatedAt,
   }) {
     return PaymentMethod(
-      id: this.id,
-      userId: this.userId,
+      id: id ?? this.id,
+      userId: userId ?? this.userId,
       type: type ?? this.type,
       name: name ?? this.name,
       cardNumber: cardNumber ?? this.cardNumber,
       cardHolderName: cardHolderName ?? this.cardHolderName,
       expiryDate: expiryDate ?? this.expiryDate,
       isDefault: isDefault ?? this.isDefault,
-      createdAt: this.createdAt,
-      updatedAt: updatedAt ?? DateTime.now(),
+      createdAt: createdAt ?? this.createdAt,
+      updatedAt: updatedAt ?? this.updatedAt,
     );
   }
 }

@@ -1,4 +1,3 @@
-// File: lib/screens/inspections/delivery_detail_screen.dart
 import 'package:flutter/material.dart';
 import '../../widgets/custom_app_bar.dart';
 import '../../widgets/bottom_nav_bar.dart';
@@ -6,7 +5,9 @@ import '../../services/delivery_service.dart';
 import '../../models/delivery_request.dart';
 
 class DeliveryDetailScreen extends StatefulWidget {
-  const DeliveryDetailScreen({super.key});
+  final String deliveryId;
+
+  const DeliveryDetailScreen({super.key, required this.deliveryId});
 
   @override
   State<DeliveryDetailScreen> createState() => _DeliveryDetailScreenState();
@@ -16,32 +17,20 @@ class _DeliveryDetailScreenState extends State<DeliveryDetailScreen> {
   final DeliveryService _deliveryService = DeliveryService();
   bool _isLoading = false;
   DeliveryRequest? _deliveryRequest;
-  String? _requestId;
 
   @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // Get the delivery request ID from the route arguments
-    final args = ModalRoute.of(context)?.settings.arguments;
-    if (args != null && args is String && args != _requestId) {
-      _requestId = args;
-      _loadDeliveryDetails();
-    } else if (_requestId == null) {
-      // For demo purposes, use a placeholder ID
-      _requestId = 'placeholder_delivery_id';
-      _loadDeliveryDetails();
-    }
+  void initState() {
+    super.initState();
+    _loadDeliveryDetails();
   }
 
   Future<void> _loadDeliveryDetails() async {
-    if (_requestId == null) return;
-
     setState(() {
       _isLoading = true;
     });
 
     try {
-      final request = await _deliveryService.getDeliveryRequest(_requestId!);
+      final request = await _deliveryService.getDeliveryRequest(widget.deliveryId);
 
       if (mounted) {
         setState(() {
@@ -74,7 +63,6 @@ class _DeliveryDetailScreenState extends State<DeliveryDetailScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      // Title
                       Text(
                         'Delivery Request for ${_deliveryRequest!.itemName}',
                         style: const TextStyle(
@@ -84,8 +72,6 @@ class _DeliveryDetailScreenState extends State<DeliveryDetailScreen> {
                         ),
                       ),
                       const SizedBox(height: 24),
-
-                      // Timeline Section
                       _buildTimelineStep(
                         context,
                         icon: Icons.calendar_today,
@@ -129,10 +115,7 @@ class _DeliveryDetailScreenState extends State<DeliveryDetailScreen> {
                         isCompleted: _deliveryRequest!.status.index >= DeliveryStatus.delivered.index,
                         description: 'The item has been successfully delivered!',
                       ),
-
                       const SizedBox(height: 24),
-
-                      // Additional Information
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -154,11 +137,7 @@ class _DeliveryDetailScreenState extends State<DeliveryDetailScreen> {
                               children: [
                                 const Text(
                                   'More information',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.bold,
-                                    color: Colors.black,
-                                  ),
+                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.black),
                                 ),
                                 Icon(Icons.keyboard_arrow_down, color: Colors.grey[700]),
                               ],
@@ -166,32 +145,22 @@ class _DeliveryDetailScreenState extends State<DeliveryDetailScreen> {
                             const SizedBox(height: 16),
                             Text(
                               'Tracking Number: ${_deliveryRequest!.trackingNumber ?? 'Not available yet'}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               'Estimated Delivery: ${_deliveryRequest!.estimatedDeliveryDate.toString().substring(0, 10)}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                              ),
+                              style: const TextStyle(fontSize: 14),
                             ),
                             const SizedBox(height: 8),
                             Text(
                               'Delivery Address: ${_deliveryRequest!.deliveryLocation}',
-                              style: const TextStyle(
-                                fontSize: 14,
-                              ),
+                              style: const TextStyle(fontSize: 14),
                             ),
                           ],
                         ),
                       ),
-                      
                       const SizedBox(height: 24),
-                      
-                      // Contact Section
                       Container(
                         padding: const EdgeInsets.all(16),
                         decoration: BoxDecoration(
@@ -214,17 +183,10 @@ class _DeliveryDetailScreenState extends State<DeliveryDetailScreen> {
                                 color: Colors.blue.shade100,
                                 shape: BoxShape.circle,
                               ),
-                              child: const Icon(
-                                Icons.phone,
-                                color: Colors.blue,
-                                size: 20,
-                              ),
+                              child: const Icon(Icons.phone, color: Colors.blue, size: 20),
                             ),
                             const SizedBox(width: 16),
-                            const Text(
-                              'Contact us at: 800 3939',
-                              style: TextStyle(fontSize: 15),
-                            ),
+                            const Text('Contact us at: 800 3939', style: TextStyle(fontSize: 15)),
                             const Spacer(),
                             const Icon(Icons.arrow_forward_ios, size: 18),
                           ],
@@ -248,7 +210,6 @@ class _DeliveryDetailScreenState extends State<DeliveryDetailScreen> {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Circle indicator
         Container(
           width: 25,
           height: 25,
@@ -256,14 +217,9 @@ class _DeliveryDetailScreenState extends State<DeliveryDetailScreen> {
             color: isCompleted ? Colors.green : Colors.grey,
             shape: BoxShape.circle,
           ),
-          child: Icon(
-            icon,
-            color: Colors.white,
-            size: 16,
-          ),
+          child: Icon(icon, color: Colors.white, size: 16),
         ),
         const SizedBox(width: 16),
-        // Content
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -280,21 +236,12 @@ class _DeliveryDetailScreenState extends State<DeliveryDetailScreen> {
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: isCompleted ? Colors.black : Colors.grey[600],
-                  ),
+                  style: TextStyle(fontSize: 14, color: isCompleted ? Colors.black : Colors.grey[600]),
                 ),
               ],
               if (description.isNotEmpty && isCompleted) ...[
                 const SizedBox(height: 4),
-                Text(
-                  description,
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey[700],
-                  ),
-                ),
+                Text(description, style: TextStyle(fontSize: 12, color: Colors.grey[700])),
               ],
               const SizedBox(height: 8),
             ],

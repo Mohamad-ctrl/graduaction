@@ -25,10 +25,10 @@ class _AddressFormScreenState extends State<AddressFormScreen> {
   bool _isLoading = false;
   
   late TextEditingController _nameController;
-  late TextEditingController _streetController;
+  late TextEditingController _addressLine1Controller;
   late TextEditingController _cityController;
   late TextEditingController _stateController;
-  late TextEditingController _zipController;
+  late TextEditingController _postalCodeController;
   late TextEditingController _countryController;
   late TextEditingController _phoneController;
   bool _isDefault = false;
@@ -39,10 +39,10 @@ class _AddressFormScreenState extends State<AddressFormScreen> {
     
     // Initialize controllers with existing data if editing
     _nameController = TextEditingController(text: widget.initialAddress?.name ?? '');
-    _streetController = TextEditingController(text: widget.initialAddress?.street ?? '');
+    _addressLine1Controller = TextEditingController(text: widget.initialAddress?.addressLine1 ?? '');
     _cityController = TextEditingController(text: widget.initialAddress?.city ?? '');
     _stateController = TextEditingController(text: widget.initialAddress?.state ?? '');
-    _zipController = TextEditingController(text: widget.initialAddress?.zip ?? '');
+    _postalCodeController = TextEditingController(text: widget.initialAddress?.postalCode ?? '');
     _countryController = TextEditingController(text: widget.initialAddress?.country ?? 'UAE');
     _phoneController = TextEditingController(text: widget.initialAddress?.phone ?? '');
     _isDefault = widget.initialAddress?.isDefault ?? false;
@@ -51,10 +51,10 @@ class _AddressFormScreenState extends State<AddressFormScreen> {
   @override
   void dispose() {
     _nameController.dispose();
-    _streetController.dispose();
+    _addressLine1Controller.dispose();
     _cityController.dispose();
     _stateController.dispose();
-    _zipController.dispose();
+    _postalCodeController.dispose();
     _countryController.dispose();
     _phoneController.dispose();
     super.dispose();
@@ -67,25 +67,33 @@ class _AddressFormScreenState extends State<AddressFormScreen> {
       });
       
       try {
+        // TODO: Fetch current userId from UserService
+        final userId = 'current_user_id'; // Replace with actual userId fetching logic
+        
         final address = Address(
           id: widget.initialAddress?.id ?? '',
+          userId: userId,
           name: _nameController.text,
-          street: _streetController.text,
+          addressLine1: _addressLine1Controller.text,
+          addressLine2: '', // Add logic for addressLine2 if needed
           city: _cityController.text,
           state: _stateController.text,
-          zip: _zipController.text,
           country: _countryController.text,
+          postalCode: _postalCodeController.text,
           phone: _phoneController.text,
           isDefault: _isDefault,
+          createdAt: widget.initialAddress?.createdAt ?? DateTime.now(),
+          updatedAt: DateTime.now(),
         );
         
         if (widget.isEditing && widget.initialAddress != null) {
-          await _userService.updateAddress(address);
+          // TODO: Fix once user_service.dart is provided
+          await _userService.updateAddress(address.id, address.toMap());
           if (_isDefault) {
             await _userService.setDefaultAddress(address.id);
           }
         } else {
-          final newAddress = await _userService.addAddress(address);
+          final newAddress = await _userService.addAddress(address.toMap());
           if (_isDefault) {
             await _userService.setDefaultAddress(newAddress.id);
           }
@@ -167,11 +175,11 @@ class _AddressFormScreenState extends State<AddressFormScreen> {
                     ),
                     const SizedBox(height: 16),
                     
-                    // Street field
+                    // Address Line 1 field
                     TextFormField(
-                      controller: _streetController,
+                      controller: _addressLine1Controller,
                       decoration: const InputDecoration(
-                        labelText: 'Street Address',
+                        labelText: 'Address Line 1',
                         hintText: 'Enter your street address',
                         border: OutlineInputBorder(),
                       ),
@@ -218,12 +226,12 @@ class _AddressFormScreenState extends State<AddressFormScreen> {
                     ),
                     const SizedBox(height: 16),
                     
-                    // Zip field
+                    // Postal Code field
                     TextFormField(
-                      controller: _zipController,
+                      controller: _postalCodeController,
                       decoration: const InputDecoration(
-                        labelText: 'ZIP/Postal Code',
-                        hintText: 'Enter your ZIP or postal code',
+                        labelText: 'Postal Code',
+                        hintText: 'Enter your postal code',
                         border: OutlineInputBorder(),
                       ),
                       keyboardType: TextInputType.number,

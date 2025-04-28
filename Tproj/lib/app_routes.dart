@@ -22,6 +22,7 @@ import 'screens/admin/admin_inspections_screen.dart';
 import 'screens/admin/admin_deliveries_screen.dart';
 import 'models/address.dart';
 import 'models/payment_method.dart';
+import 'models/user.dart';
 
 class AppRoutes {
   static const String login = '/login';
@@ -55,7 +56,10 @@ class AppRoutes {
       case signup:
         return MaterialPageRoute(builder: (_) => const SignupScreen());
       case signupConfirmation:
-        return MaterialPageRoute(builder: (_) => const SignupConfirmationScreen());
+        final user = settings.arguments as User;
+        return MaterialPageRoute(
+          builder: (_) => SignupConfirmationScreen(user: user),
+        );
       case home:
         return MaterialPageRoute(builder: (_) => const HomeScreen());
       case profile:

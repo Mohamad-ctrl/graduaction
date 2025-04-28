@@ -34,6 +34,7 @@ class _HomeScreenState extends State<HomeScreen> {
     });
     
     try {
+      // TODO: Fix argument issue once inspection_service.dart is provided
       final inspections = await _inspectionService.getUserInspectionRequests();
       final deliveries = await _deliveryService.getUserDeliveryRequests();
       
@@ -315,19 +316,19 @@ class _HomeScreenState extends State<HomeScreen> {
     // Calculate progress percentage based on status
     double progressPercentage = 0.0;
     switch (inspection.status) {
-      case 'pending':
+      case InspectionStatus.pending:
         progressPercentage = 0.2;
         break;
-      case 'assigned':
+      case InspectionStatus.scheduled:
         progressPercentage = 0.4;
         break;
-      case 'in_progress':
+      case InspectionStatus.inProgress:
         progressPercentage = 0.6;
         break;
-      case 'inspected':
+      case InspectionStatus.completed:
         progressPercentage = 0.8;
         break;
-      case 'completed':
+      case InspectionStatus.reportUploaded:
         progressPercentage = 1.0;
         break;
       default:
@@ -479,19 +480,19 @@ class _HomeScreenState extends State<HomeScreen> {
     // Calculate progress percentage based on status
     double progressPercentage = 0.0;
     switch (delivery.status) {
-      case 'pending':
+      case DeliveryStatus.pending:
         progressPercentage = 0.2;
         break;
-      case 'processing':
+      case DeliveryStatus.itemPickedUp:
         progressPercentage = 0.4;
         break;
-      case 'in_transit':
+      case DeliveryStatus.shipped:
         progressPercentage = 0.6;
         break;
-      case 'out_for_delivery':
+      case DeliveryStatus.outForDelivery:
         progressPercentage = 0.8;
         break;
-      case 'delivered':
+      case DeliveryStatus.delivered:
         progressPercentage = 1.0;
         break;
       default:
@@ -553,7 +554,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Delivery date: ${_formatDate(delivery.expectedDeliveryDate)}',
+                'Delivery date: ${_formatDate(delivery.estimatedDeliveryDate)}',
                 style: TextStyle(
                   fontSize: 12,
                   color: Colors.grey[600],
@@ -595,68 +596,68 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  MaterialColor _getStatusColor(String status) {
+  MaterialColor _getStatusColor(InspectionStatus status) {
     switch (status) {
-      case 'pending':
+      case InspectionStatus.pending:
         return Colors.orange;
-      case 'assigned':
+      case InspectionStatus.scheduled:
         return Colors.blue;
-      case 'in_progress':
+      case InspectionStatus.inProgress:
         return Colors.indigo;
-      case 'inspected':
-        return Colors.purple;
-      case 'completed':
+      case InspectionStatus.completed:
         return Colors.green;
+      case InspectionStatus.reportUploaded:
+        return Colors.purple;
       default:
         return Colors.grey;
     }
   }
 
-  String _getStatusText(String status) {
+  String _getStatusText(InspectionStatus status) {
     switch (status) {
-      case 'pending':
+      case InspectionStatus.pending:
         return 'Pending';
-      case 'assigned':
-        return 'Assigned';
-      case 'in_progress':
+      case InspectionStatus.scheduled:
+        return 'Scheduled';
+      case InspectionStatus.inProgress:
         return 'In Progress';
-      case 'inspected':
-        return 'Inspected';
-      case 'completed':
+      case InspectionStatus.completed:
         return 'Completed';
+      case InspectionStatus.reportUploaded:
+        return 'Report Uploaded';
       default:
         return 'Unknown';
     }
   }
 
-  MaterialColor _getDeliveryStatusColor(String status) {
+  MaterialColor _getDeliveryStatusColor(DeliveryStatus status) {
     switch (status) {
-      case 'pending':
+      case DeliveryStatus.pending:
         return Colors.orange;
-      case 'processing':
+      case DeliveryStatus.itemPickedUp:
         return Colors.blue;
-      case 'in_transit':
+      case DeliveryStatus.shipped:
         return Colors.indigo;
-      case 'out_for_delivery':
+      case DeliveryStatus.outForDelivery:
         return Colors.purple;
-      case 'delivered':
+      case DeliveryStatus.delivered:
         return Colors.green;
       default:
         return Colors.grey;
     }
   }
 
-  String _getDeliveryStatusText(String status) {
+  String _getDeliveryStatusText(DeliveryStatus status) {
     switch (status) {
-      case 'pending':
+      case DeliveryStatus.pending:
         return 'Pending';
-      case 'processing':
-        return 'Processing';
-      case 'in_transit':
-        return 'In Transit';
-      case 'out_for_delivery':
+      case DeliveryStatus.itemPickedUp:
+        return 'Item Picked Up';
+      case DeliveryStatus.shipped:
+        return 'Shipped';
+      case DeliveryStatus.outForDelivery:
         return 'Out for Delivery';
-      case 'delivered':
+      case DeliveryStatus.delivered:
         return 'Delivered';
       default:
         return 'Unknown';
