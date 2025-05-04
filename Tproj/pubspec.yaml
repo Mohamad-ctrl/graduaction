@@ -1,5 +1,5 @@
 # File: pubspec.yaml
-name: check_deliver_app
+name: Tproj
 description: A mobile application for remote item inspection and delivery services.
 publish_to: 'none'
 version: 1.0.0+1
@@ -20,7 +20,7 @@ dependencies:
   provider: ^6.0.5
   shared_preferences: ^2.2.0
   url_launcher: ^6.1.12
-  flutter_local_notifications: ^15.1.1
+  flutter_local_notifications: ^17.2.3
   google_maps_flutter: ^2.3.1
   http: ^1.1.0
   path_provider: ^2.1.0

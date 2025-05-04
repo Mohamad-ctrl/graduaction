@@ -189,7 +189,7 @@ class _InspectionRequestScreenState extends State<InspectionRequestScreen> {
                 ],
               ),
             ),
-      bottomNavigationBar: const BottomNavBar(currentIndex: 2),
+      bottomNavigationBar: const BottomNavBar(currentIndex: 1),
     );
   }
 

@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import '../../models/user.dart';
+import '../../models/user.dart' as app_models;
 
 class SignupConfirmationScreen extends StatefulWidget {
-  final User user;
+  final app_models.User user;
 
   const SignupConfirmationScreen({Key? key, required this.user}) : super(key: key);
 

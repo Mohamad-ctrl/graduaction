@@ -8,7 +8,7 @@ class Address {
   final String state;
   final String country;
   final String postalCode;
-  final String? phone; // Added to resolve missing property errors
+  final String? phone;
   final bool isDefault;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -29,40 +29,40 @@ class Address {
     required this.updatedAt,
   });
 
-  factory Address.fromMap(Map<String, dynamic> map, String id) {
-    return Address(
-      id: id,
-      userId: map['userId'] ?? '',
-      name: map['name'] ?? '',
-      addressLine1: map['addressLine1'] ?? '',
-      addressLine2: map['addressLine2'],
-      city: map['city'] ?? '',
-      state: map['state'] ?? '',
-      country: map['country'] ?? '',
-      postalCode: map['postalCode'] ?? '',
-      phone: map['phone'], // Included in fromMap
-      isDefault: map['isDefault'] ?? false,
-      createdAt: map['createdAt']?.toDate() ?? DateTime.now(),
-      updatedAt: map['updatedAt']?.toDate() ?? DateTime.now(),
-    );
-  }
+  /// aliases expected by several UI widgets
+  String get street => addressLine1;
+  String get zip    => postalCode;
 
-  Map<String, dynamic> toMap() {
-    return {
-      'userId': userId,
-      'name': name,
-      'addressLine1': addressLine1,
-      'addressLine2': addressLine2,
-      'city': city,
-      'state': state,
-      'country': country,
-      'postalCode': postalCode,
-      'phone': phone, // Included in toMap
-      'isDefault': isDefault,
-      'createdAt': createdAt,
-      'updatedAt': updatedAt,
-    };
-  }
+  factory Address.fromMap(Map<String, dynamic> map, String id) => Address(
+        id: id,
+        userId: map['userId'] ?? '',
+        name: map['name'] ?? '',
+        addressLine1: map['addressLine1'] ?? '',
+        addressLine2: map['addressLine2'],
+        city: map['city'] ?? '',
+        state: map['state'] ?? '',
+        country: map['country'] ?? '',
+        postalCode: map['postalCode'] ?? '',
+        phone: map['phone'],
+        isDefault: map['isDefault'] ?? false,
+        createdAt: map['createdAt']?.toDate() ?? DateTime.now(),
+        updatedAt: map['updatedAt']?.toDate() ?? DateTime.now(),
+      );
+
+  Map<String, dynamic> toMap() => {
+        'userId': userId,
+        'name': name,
+        'addressLine1': addressLine1,
+        'addressLine2': addressLine2,
+        'city': city,
+        'state': state,
+        'country': country,
+        'postalCode': postalCode,
+        'phone': phone,
+        'isDefault': isDefault,
+        'createdAt': createdAt,
+        'updatedAt': updatedAt,
+      };
 
   Address copyWith({
     String? id,
@@ -80,7 +80,7 @@ class Address {
     DateTime? updatedAt,
   }) {
     return Address(
-      id: id ?? this.id, // Added id parameter to fix copyWith errors
+      id: id ?? this.id,
       userId: userId ?? this.userId,
       name: name ?? this.name,
       addressLine1: addressLine1 ?? this.addressLine1,

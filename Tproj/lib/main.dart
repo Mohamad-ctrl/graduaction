@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-import 'app_routes.dart';
+import 'constants/app_routes.dart';
 import 'services/auth_service.dart';
 import 'services/agent_service.dart';
 import 'services/supabase_storage_service.dart';

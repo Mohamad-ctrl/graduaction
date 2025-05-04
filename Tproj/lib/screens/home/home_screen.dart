@@ -42,8 +42,8 @@ class _HomeScreenState extends State<HomeScreen> {
       }
       
       // Pass userId parameter to fix the missing parameter errors
-      final inspections = await _inspectionService.getUserInspectionRequests(userId);
-      final deliveries = await _deliveryService.getUserDeliveryRequests(userId);
+      final inspections = await _inspectionService.getUserInspections(userId);
+      final deliveries  = await _deliveryService.getUserDeliveries(userId);
       
       if (mounted) {
         setState(() {

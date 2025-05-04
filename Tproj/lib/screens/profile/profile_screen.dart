@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:firebase_auth/firebase_auth.dart' as fb;
+
+import '../../constants/app_routes.dart';
 import '../../models/address.dart';
 import '../../models/payment_method.dart';
 import '../../services/user_service.dart';
@@ -16,59 +19,55 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   final UserService _userService = UserService();
-  
+  final _auth = fb.FirebaseAuth.instance;
+
   bool _isLoading = true;
   List<Address> _addresses = [];
   List<PaymentMethod> _paymentMethods = [];
-  
+  bool _isAdmin = false;                  // ← NEW
   @override
   void initState() {
     super.initState();
+    _checkAdmin();                        // ← NEW    
     _loadUserData();
   }
-  
+  Future<void> _checkAdmin() async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return;
+    final isAdm = await _userService.isUserAdmin(uid);
+    if (mounted) setState(() => _isAdmin = isAdm);
+    }
+
   Future<void> _loadUserData() async {
-    setState(() {
-      _isLoading = true;
-    });
-    
+    setState(() => _isLoading = true);
     try {
-      final addresses = await _userService.getUserAddresses();
-      final paymentMethods = await _userService.getUserPaymentMethods();
-      
-      if (mounted) {
-        setState(() {
-          _addresses = addresses;
-          _paymentMethods = paymentMethods;
-          _isLoading = false;
-        });
-      }
+      final addresses       = await _userService.getUserAddresses();
+      final paymentMethods  = await _userService.getUserPaymentMethods();
+      if (mounted) setState(() {
+        _addresses       = addresses;
+        _paymentMethods  = paymentMethods;
+        _isLoading       = false;
+      });
     } catch (e) {
       if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error loading profile data: ${e.toString()}')),
-        );
+        _isLoading = false;
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text('Error: $e')));
       }
     }
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: const CustomAppBar(
-        title: 'My Profile',
-        showBackButton: false,
-      ),
+      appBar: const CustomAppBar(title: 'My Profile', showBackButton: false),
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
               onRefresh: _loadUserData,
               child: SingleChildScrollView(
                 physics: const AlwaysScrollableScrollPhysics(),
-                padding: const EdgeInsets.all(16.0),
+                padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -86,92 +85,31 @@ class _ProfileScreenState extends State<ProfileScreen> {
       bottomNavigationBar: const BottomNavBar(currentIndex: 3),
     );
   }
-  
+
+  // ───────────────── profile header ─────────────────
   Widget _buildProfileHeader() {
-    return Card(
-      elevation: 2,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
+    final user = _auth.currentUser;
+    return Row(
+      children: [
+        CircleAvatar(
+          radius: 34,
+          backgroundColor: Colors.indigo[100],
+          child: Icon(Icons.person, size: 40, color: Colors.indigo[900]),
+        ),
+        const SizedBox(width: 16),
+        Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  radius: 40,
-                  backgroundColor: Colors.indigo[100],
-                  child: Icon(
-                    Icons.person,
-                    size: 40,
-                    color: Colors.indigo[900],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      FutureBuilder(
-                        future: _userService.getCurrentUser(),
-                        builder: (context, snapshot) {
-                          if (snapshot.connectionState == ConnectionState.waiting) {
-                            return const Text('Loading...');
-                          }
-                          if (snapshot.hasError) {
-                            return Text('Error: ${snapshot.error}');
-                          }
-                          final user = snapshot.data;
-                          return Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                user?.username ?? 'User',
-                                style: const TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                user?.email ?? 'email@example.com',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                user?.phoneNumber ?? '+971 XX XXX XXXX',
-                                style: TextStyle(
-                                  color: Colors.grey[600],
-                                ),
-                              ),
-                            ],
-                          );
-                        },
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            OutlinedButton.icon(
-              onPressed: () {
-                Navigator.pushNamed(context, '/account');
-              },
-              icon: const Icon(Icons.edit),
-              label: const Text('Edit Profile'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.indigo[900],
-                side: BorderSide(color: Colors.indigo[900]!),
-                minimumSize: const Size(double.infinity, 44),
-              ),
-            ),
+            Text(user?.displayName ?? 'User',
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+            Text(user?.email ?? '-', style: const TextStyle(color: Colors.grey)),
           ],
         ),
-      ),
+      ],
     );
   }
-  
+
+  // ───────────────── address list ─────────────────
   Widget _buildAddressSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -179,124 +117,38 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'My Addresses',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            const Text('My Addresses',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             TextButton.icon(
-              onPressed: () {
-                Navigator.pushNamed(context, '/address/list')
-                    .then((_) => _loadUserData());
-              },
-              icon: const Icon(Icons.arrow_forward),
-              label: const Text('View All'),
+              onPressed: () =>
+                  Navigator.pushNamed(context, AppRoutes.addAddress)
+                      .then((value) => _loadUserData()),
+              icon: const Icon(Icons.add),
+              label: const Text('Add'),
             ),
           ],
         ),
         const SizedBox(height: 8),
         _addresses.isEmpty
-            ? EmptyStateWidget(
-                icon: Icons.location_off,
-                title: 'No Addresses Found',
-                message: 'Add your first address to get started',
-                buttonText: 'Add Address',
-                onButtonPressed: () {
-                  Navigator.pushNamed(context, '/address/add')
-                      .then((_) => _loadUserData());
-                },
-              )
-            : Card(
-                elevation: 2,
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _addresses.length > 2 ? 2 : _addresses.length,
-                  separatorBuilder: (context, index) => const Divider(),
-                  itemBuilder: (context, index) {
-                    final address = _addresses[index];
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: address.isDefault
-                            ? Colors.indigo[100]
-                            : Colors.grey[200],
-                        child: Icon(
-                          Icons.location_on,
-                          color: address.isDefault
-                              ? Colors.indigo[900]
-                              : Colors.grey[700],
-                        ),
-                      ),
-                      title: Row(
-                        children: [
-                          Text(
-                            address.name,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          if (address.isDefault) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.indigo[900],
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Text(
-                                'Default',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                      subtitle: Text(
-                        '${address.addressLine1}, ${address.city}, ${address.state}',
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () {
-                        Navigator.pushNamed(
-                          context,
-                          '/address/edit',
-                          arguments: address,
-                        ).then((_) => _loadUserData());
-                      },
-                    );
-                  },
-                ),
+            ? const EmptyStateWidget(
+              message: 'No addresses yet',
+              icon: Icons.location_off,
+            )
+            : Column(
+                children: _addresses
+                    .map((a) => ListTile(
+                          leading: const Icon(Icons.location_on),
+                          title: Text(a.name),
+                          subtitle: Text(
+                              '${a.street}, ${a.city}, ${a.country}'),
+                        ))
+                    .toList(),
               ),
-        if (_addresses.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: OutlinedButton.icon(
-              onPressed: () {
-                Navigator.pushNamed(context, '/address/add')
-                    .then((_) => _loadUserData());
-              },
-              icon: const Icon(Icons.add),
-              label: const Text('Add New Address'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.indigo[900],
-                side: BorderSide(color: Colors.indigo[900]!),
-                minimumSize: const Size(double.infinity, 44),
-              ),
-            ),
-          ),
       ],
     );
   }
-  
+
+  // ───────────────── payment methods ─────────────────
   Widget _buildPaymentMethodsSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -304,178 +156,83 @@ class _ProfileScreenState extends State<ProfileScreen> {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'Payment Methods',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+            const Text('Payment Methods',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
             TextButton.icon(
-              onPressed: () {
-                Navigator.pushNamed(context, '/payment/list')
-                    .then((_) => _loadUserData());
-              },
-              icon: const Icon(Icons.arrow_forward),
-              label: const Text('View All'),
+              onPressed: () =>
+                Navigator.pushNamed(context, AppRoutes.addPaymentMethod)
+                  .then((value) => _loadUserData()),
+              icon: const Icon(Icons.add),
+              label: const Text('Add'),
             ),
           ],
         ),
         const SizedBox(height: 8),
         _paymentMethods.isEmpty
-            ? EmptyStateWidget(
-                icon: Icons.credit_card_off,
-                title: 'No Payment Methods Found',
-                message: 'Add your first payment method to get started',
-                buttonText: 'Add Payment Method',
-                onButtonPressed: () {
-                  Navigator.pushNamed(context, '/payment/add')
-                      .then((_) => _loadUserData());
-                },
-              )
-            : Card(
-                elevation: 2,
-                child: ListView.separated(
-                  shrinkWrap: true,
-                  physics: const NeverScrollableScrollPhysics(),
-                  itemCount: _paymentMethods.length > 2 ? 2 : _paymentMethods.length,
-                  separatorBuilder: (context, index) => const Divider(),
-                  itemBuilder: (context, index) {
-                    final paymentMethod = _paymentMethods[index];
-                    return ListTile(
-                      leading: CircleAvatar(
-                        backgroundColor: paymentMethod.isDefault
-                            ? Colors.indigo[100]
-                            : Colors.grey[200],
-                        child: Icon(
-                          Icons.credit_card,
-                          color: paymentMethod.isDefault
-                              ? Colors.indigo[900]
-                              : Colors.grey[700],
-                        ),
-                      ),
-                      title: Row(
-                        children: [
-                          Text(
-                            _getCardTypeLabel(paymentMethod.cardType),
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                          if (paymentMethod.isDefault) ...[
-                            const SizedBox(width: 8),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 8,
-                                vertical: 2,
-                              ),
-                              decoration: BoxDecoration(
-                                color: Colors.indigo[900],
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Text(
-                                'Default',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                          ],
-                        ],
-                      ),
-                      subtitle: Text(
-                        _formatCardNumber(paymentMethod.cardNumber),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () {
-                        Navigator.pushNamed(
-                          context,
-                          '/payment/edit',
-                          arguments: paymentMethod,
-                        ).then((_) => _loadUserData());
-                      },
-                    );
-                  },
-                ),
+            ? const EmptyStateWidget(
+              message: 'No payment methods yet',
+              icon: Icons.credit_card_off,
+            )
+            : Column(
+                children: _paymentMethods
+                    .map((p) => ListTile(
+                          leading: const Icon(Icons.credit_card),
+                          title: Text('${p.cardType} •••• ${p.cardNumber.substring(p.cardNumber.length - 4)}'),
+                          subtitle: Text('Expires ${p.expiryDate}'),
+                        ))
+                    .toList(),
               ),
-        if (_paymentMethods.isNotEmpty)
-          Padding(
-            padding: const EdgeInsets.only(top: 8),
-            child: OutlinedButton.icon(
-              onPressed: () {
-                Navigator.pushNamed(context, '/payment/add')
-                    .then((_) => _loadUserData());
-              },
-              icon: const Icon(Icons.add),
-              label: const Text('Add New Payment Method'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.indigo[900],
-                side: BorderSide(color: Colors.indigo[900]!),
-                minimumSize: const Size(double.infinity, 44),
-              ),
-            ),
-          ),
       ],
     );
   }
-  
+
+  // ───────────────── account settings (with new button) ─────────────────
   Widget _buildAccountSettingsSection() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Account Settings',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
+        const Text('Account Settings',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
         const SizedBox(height: 8),
         Card(
           elevation: 2,
           child: Column(
             children: [
               ListTile(
-                leading: Icon(
-                  Icons.person,
-                  color: Colors.indigo[900],
-                ),
+                leading: Icon(Icons.person, color: Colors.indigo[900]),
                 title: const Text('Account Center'),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  Navigator.pushNamed(context, '/account');
-                },
+                onTap: () => Navigator.pushNamed(context, '/account'),
               ),
               const Divider(height: 1),
               ListTile(
-                leading: Icon(
-                  Icons.lock,
-                  color: Colors.indigo[900],
+                leading: Icon(Icons.list_alt, color: Colors.indigo[900]),
+                title: const Text('All My Requests'),
+                trailing: const Icon(Icons.chevron_right),
+                onTap: () => Navigator.pushNamed(context, AppRoutes.orders),
+              ),
+              const Divider(height: 1),
+              if (_isAdmin) ...[
+                ListTile(
+                  leading : Icon(Icons.dashboard, color: Colors.indigo[900]),
+                  title   : const Text('Admin Dashboard'),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap   : () =>
+                      Navigator.pushNamed(context, AppRoutes.adminDashboard),
                 ),
+                const Divider(height: 1),
+              ],
+              ListTile(
+                leading: Icon(Icons.lock, color: Colors.indigo[900]),
                 title: const Text('Change Password'),
                 trailing: const Icon(Icons.chevron_right),
-                onTap: () {
-                  Navigator.pushNamed(context, '/account/password');
-                },
+                onTap: () => Navigator.pushNamed(context, '/account/password'),
               ),
               const Divider(height: 1),
               ListTile(
-                leading: Icon(
-                  Icons.logout,
-                  color: Colors.red[700],
-                ),
-                title: Text(
-                  'Logout',
-                  style: TextStyle(
-                    color: Colors.red[700],
-                  ),
-                ),
-                onTap: () {
-                  _showLogoutConfirmation();
-                },
+                leading: Icon(Icons.logout, color: Colors.red[700]),
+                title: Text('Logout', style: TextStyle(color: Colors.red[700])),
+                onTap: _showLogoutConfirmation,
               ),
             ],
           ),
@@ -483,73 +240,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
       ],
     );
   }
-  
+
+  // ───────────────── logout helper ─────────────────
   void _showLogoutConfirmation() {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Logout'),
-        content: const Text('Are you sure you want to logout?'),
+      builder: (_) => AlertDialog(
+        title: const Text('Confirm Logout'),
+        content: const Text('Are you sure you want to log out?'),
         actions: [
           TextButton(
-            onPressed: () {
-              Navigator.pop(context);
-            },
+            onPressed: () => Navigator.pop(context),
             child: const Text('Cancel'),
           ),
-          TextButton(
+          ElevatedButton(
             onPressed: () {
-              Navigator.pop(context);
-              _logout();
+              fb.FirebaseAuth.instance.signOut();
+              Navigator.pushNamedAndRemoveUntil(
+                  context, AppRoutes.login, (_) => false);
             },
-            child: Text(
-              'Logout',
-              style: TextStyle(
-                color: Colors.red[700],
-              ),
-            ),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.red[700]),
+            child: const Text('Logout'),
           ),
         ],
       ),
     );
-  }
-  
-  Future<void> _logout() async {
-    try {
-      // Call auth service logout method
-      // await _authService.logout();
-      
-      // Navigate to login screen
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/login',
-        (route) => false,
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error logging out: ${e.toString()}')),
-      );
-    }
-  }
-  
-  String _getCardTypeLabel(String cardType) {
-    switch (cardType.toLowerCase()) {
-      case 'visa':
-        return 'Visa';
-      case 'mastercard':
-        return 'Mastercard';
-      case 'amex':
-        return 'American Express';
-      case 'discover':
-        return 'Discover';
-      default:
-        return cardType;
-    }
-  }
-  
-  String _formatCardNumber(String cardNumber) {
-    if (cardNumber.length < 4) return cardNumber;
-    
-    return '•••• •••• •••• ${cardNumber.substring(cardNumber.length - 4)}';
   }
 }

@@ -1,42 +1,39 @@
+// File: lib/services/user_service.dart
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
+
 import '../models/user.dart';
-import '../models/address.dart'; // Import Address model
-import '../models/payment_method.dart'; // Import PaymentMethod model
+import '../models/address.dart';
+import '../models/payment_method.dart';
 
 class UserService {
+  // ────────────────────────────────────────────────────────────
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final firebase_auth.FirebaseAuth _auth = firebase_auth.FirebaseAuth.instance;
+
+  /// top-level users collection name
   final String _collection = 'users';
 
-  // Get current user
+  // ───────────────  BASE USER HELPERS  ───────────────
   Future<User?> getCurrentUser() async {
     try {
-      final currentUser = _auth.currentUser;
-      if (currentUser == null) return null;
-      
-      return getUserById(currentUser.uid);
-    } catch (e) {
-      // print('Error getting current user: $e'); // Removed print
+      final current = _auth.currentUser;
+      if (current == null) return null;
+      return getUserById(current.uid);
+    } catch (_) {
       return null;
     }
   }
 
-  // Get user by ID
   Future<User?> getUserById(String userId) async {
     try {
       final doc = await _firestore.collection(_collection).doc(userId).get();
-      if (doc.exists) {
-        return User.fromMap(doc.data()!, doc.id);
-      }
-      return null;
-    } catch (e) {
-      // print('Error getting user by ID: $e'); // Removed print
+      return doc.exists ? User.fromMap(doc.data()!, doc.id) : null;
+    } catch (_) {
       return null;
     }
   }
 
-  // Update user profile
   Future<User?> updateUserProfile({
     required String userId,
     String? username,
@@ -44,46 +41,113 @@ class UserService {
     String? profileImageUrl,
   }) async {
     try {
-      final userRef = _firestore.collection(_collection).doc(userId);
-      final userDoc = await userRef.get();
-      
-      if (!userDoc.exists) return null;
-      
-      final userData = User.fromMap(userDoc.data()!, userDoc.id);
-      final updatedUser = userData.copyWith(
+      final ref = _firestore.collection(_collection).doc(userId);
+      final snap = await ref.get();
+      if (!snap.exists) return null;
+
+      final user = User.fromMap(snap.data()!, snap.id).copyWith(
         username: username,
         phoneNumber: phoneNumber,
         profileImageUrl: profileImageUrl,
         updatedAt: DateTime.now(),
       );
-      
-      await userRef.update(updatedUser.toMap());
-      return updatedUser;
-    } catch (e) {
-      // print('Error updating user profile: $e'); // Removed print
+
+      await ref.update(user.toMap());
+      return user;
+    } catch (_) {
       return null;
     }
   }
 
-  // Get user addresses
-  Future<List<Address>> getUserAddresses() async {
-    try {
-      final currentUser = _auth.currentUser;
-      if (currentUser == null) return [];
-      
-      final snapshot = await _firestore
-          .collection('addresses')
-          .where('userId', isEqualTo: currentUser.uid)
-          .get();
-      
-      return snapshot.docs.map((doc) => Address.fromMap(doc.data(), doc.id)).toList();
-    } catch (e) {
-      // print('Error getting user addresses: $e'); // Removed print
-      return [];
-    }
+  // ───────────────────────  ADMIN  ───────────────────────
+  Future<bool> isUserAdmin(String userId) async {
+    final adminDoc =
+        await _firestore.collection('admins').doc(userId).get(); // simple flag
+    return adminDoc.exists;
   }
 
-  // Add user address
+  // ───────────────  ADDRESS CRUD (MODEL-BASED)  ───────────────
+  Future<Address> addAddress(Address address) async {
+    final doc =
+        await _firestore.collection('addresses').add(address.toMap());
+    return address.copyWith(id: doc.id);
+  }
+
+  Future<void> updateAddress(Address address) => _firestore
+      .collection('addresses')
+      .doc(address.id)
+      .update(address.toMap());
+
+  Future<void> deleteAddress(String id) =>
+      _firestore.collection('addresses').doc(id).delete();
+
+  Future<void> setDefaultAddress(String id) async {
+    final batch = _firestore.batch();
+    final snap = await _firestore.collection('addresses').get();
+    for (final d in snap.docs) {
+      batch.update(d.reference, {'isDefault': d.id == id});
+    }
+    await batch.commit();
+  }
+
+  Future<List<Address>> getUserAddresses() async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return [];
+    final snap = await _firestore
+        .collection('addresses')
+        .where('userId', isEqualTo: uid)
+        .orderBy('createdAt', descending: true)
+        .get();
+    return snap.docs.map((d) => Address.fromMap(d.data(), d.id)).toList();
+  }
+
+  // ───────────────  PAYMENT-METHOD CRUD  ───────────────
+  Future<PaymentMethod> addPaymentMethod(PaymentMethod pm) async {
+    final doc =
+        await _firestore.collection('paymentMethods').add(pm.toMap());
+    return pm.copyWith(id: doc.id);
+  }
+
+  Future<void> updatePaymentMethod(PaymentMethod pm) => _firestore
+      .collection('paymentMethods')
+      .doc(pm.id)
+      .update(pm.toMap());
+
+  Future<void> deletePaymentMethod(String id) =>
+      _firestore.collection('paymentMethods').doc(id).delete();
+
+  Future<void> setDefaultPaymentMethod(String id) async {
+    final batch = _firestore.batch();
+    final snap = await _firestore.collection('paymentMethods').get();
+    for (final d in snap.docs) {
+      batch.update(d.reference, {'isDefault': d.id == id});
+    }
+    await batch.commit();
+  }
+
+  Future<List<PaymentMethod>> getUserPaymentMethods() async {
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return [];
+    final snap = await _firestore
+        .collection('paymentMethods')
+        .where('userId', isEqualTo: uid)
+        .orderBy('createdAt', descending: true)
+        .get();
+    return snap.docs
+        .map((d) => PaymentMethod.fromMap(d.data(), d.id))
+        .toList();
+  }
+
+  // ───────────────  UTILITY / ADMIN LISTS  ───────────────
+  Future<List<User>> getAllUsers() async {
+    final snap = await _firestore.collection(_collection).get();
+    return snap.docs.map((d) => User.fromMap(d.data(), d.id)).toList();
+  }
+
+  /// Convenience wrapper preserved from your old API layer
+  /// (keeps older calls compiling while you migrate)
+  // ADDRESSES (param-style)
+  @deprecated
   Future<bool> addUserAddress({
     required String name,
     required String street,
@@ -95,135 +159,56 @@ class UserService {
     String? phone,
     bool isDefault = false,
   }) async {
-    try {
-      final currentUser = _auth.currentUser;
-      if (currentUser == null) return false;
-      
-      // If this is the default address, update all other addresses to non-default
-      if (isDefault) {
-        final addressesSnapshot = await _firestore
-            .collection('addresses')
-            .where('userId', isEqualTo: currentUser.uid)
-            .where('isDefault', isEqualTo: true)
-            .get();
-        
-        for (var doc in addressesSnapshot.docs) {
-          await doc.reference.update({'isDefault': false});
-        }
-      }
-      
-      // Create new address
-      await _firestore.collection('addresses').add({
-        'userId': currentUser.uid,
-        'name': name,
-        'addressLine1': street,
-        'addressLine2': addressLine2,
-        'city': city,
-        'state': state,
-        'country': country,
-        'postalCode': postalCode,
-        'phone': phone,
-        'isDefault': isDefault,
-        'createdAt': Timestamp.now(),
-        'updatedAt': Timestamp.now(),
-      });
-      
-      return true;
-    } catch (e) {
-      // print('Error adding user address: $e'); // Removed print
-      return false;
-    }
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return false;
+
+    final addr = Address(
+      id: '',
+      userId: uid,
+      name: name,
+      addressLine1: street,
+      addressLine2: addressLine2,
+      city: city,
+      state: state,
+      country: country,
+      postalCode: postalCode,
+      phone: phone,
+      isDefault: isDefault,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+
+    await addAddress(addr);
+    if (isDefault) await setDefaultAddress(addr.id);
+    return true;
   }
 
-  // Get user payment methods
-  Future<List<PaymentMethod>> getUserPaymentMethods() async {
-    try {
-      final currentUser = _auth.currentUser;
-      if (currentUser == null) return [];
-      
-      final snapshot = await _firestore
-          .collection('paymentMethods')
-          .where('userId', isEqualTo: currentUser.uid)
-          .get();
-      
-      return snapshot.docs.map((doc) => PaymentMethod.fromMap(doc.data(), doc.id)).toList();
-    } catch (e) {
-      // print('Error getting user payment methods: $e'); // Removed print
-      return [];
-    }
-  }
-
-  // Add user payment method
+  // PAYMENT METHODS (param-style)
+  @deprecated
   Future<bool> addUserPaymentMethod({
     required String cardType,
     required String cardNumber,
     required String cardHolderName,
     required String expiryDate,
+    String? cvv,
     bool isDefault = false,
   }) async {
-    try {
-      final currentUser = _auth.currentUser;
-      if (currentUser == null) return false;
-      
-      // If this is the default payment method, update all other payment methods to non-default
-      if (isDefault) {
-        final paymentMethodsSnapshot = await _firestore
-            .collection('paymentMethods')
-            .where('userId', isEqualTo: currentUser.uid)
-            .where('isDefault', isEqualTo: true)
-            .get();
-        
-        for (var doc in paymentMethodsSnapshot.docs) {
-          await doc.reference.update({'isDefault': false});
-        }
-      }
-      
-      // Create new payment method
-      await _firestore.collection('paymentMethods').add({
-        'userId': currentUser.uid,
-        'cardType': cardType,
-        'cardNumber': cardNumber,
-        'cardHolderName': cardHolderName,
-        'expiryDate': expiryDate,
-        'isDefault': isDefault,
-        'createdAt': Timestamp.now(),
-        'updatedAt': Timestamp.now(),
-      });
-      
-      return true;
-    } catch (e) {
-      // print('Error adding user payment method: $e'); // Removed print
-      return false;
-    }
-  }
+    final uid = _auth.currentUser?.uid;
+    if (uid == null) return false;
 
-  // Update user profile image
-  Future<bool> updateUserProfileImage({
-    required String imageUrl,
-  }) async {
-    try {
-      final currentUser = _auth.currentUser;
-      if (currentUser == null) return false;
-      
-      await _firestore.collection(_collection).doc(currentUser.uid).update({
-        'profileImageUrl': imageUrl,
-        'updatedAt': Timestamp.now(),
-      });
-      return true;
-    } catch (e) {
-      // print('Error updating user profile image: $e'); // Removed print
-      return false;
-    }
-  }
+    final pm = PaymentMethod(
+      id: '',
+      userId: uid,
+      cardType: cardType,
+      cardNumber: cardNumber,
+      cardholderName: cardHolderName,
+      expiryDate: expiryDate,
+      cvv: cvv,
+      isDefault: isDefault,
+    );
 
-  // Get all users (admin function)
-  Future<List<User>> getAllUsers() async {
-    try {
-      final snapshot = await _firestore.collection(_collection).get();
-      return snapshot.docs.map((doc) => User.fromMap(doc.data(), doc.id)).toList();
-    } catch (e) {
-      // print('Error getting all users: $e'); // Removed print
-      return [];
-    }
+    await addPaymentMethod(pm);
+    if (isDefault) await setDefaultPaymentMethod(pm.id);
+    return true;
   }
 }

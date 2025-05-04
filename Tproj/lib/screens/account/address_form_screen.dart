@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+
 import '../../models/address.dart';
 import '../../services/user_service.dart';
 import '../../widgets/custom_app_bar.dart';
@@ -21,9 +22,9 @@ class AddressFormScreen extends StatefulWidget {
 class _AddressFormScreenState extends State<AddressFormScreen> {
   final _formKey = GlobalKey<FormState>();
   final UserService _userService = UserService();
-  
+
   bool _isLoading = false;
-  
+
   late TextEditingController _nameController;
   late TextEditingController _addressLine1Controller;
   late TextEditingController _cityController;
@@ -36,15 +37,21 @@ class _AddressFormScreenState extends State<AddressFormScreen> {
   @override
   void initState() {
     super.initState();
-    
-    // Initialize controllers with existing data if editing
-    _nameController = TextEditingController(text: widget.initialAddress?.name ?? '');
-    _addressLine1Controller = TextEditingController(text: widget.initialAddress?.addressLine1 ?? '');
-    _cityController = TextEditingController(text: widget.initialAddress?.city ?? '');
-    _stateController = TextEditingController(text: widget.initialAddress?.state ?? '');
-    _postalCodeController = TextEditingController(text: widget.initialAddress?.postalCode ?? '');
-    _countryController = TextEditingController(text: widget.initialAddress?.country ?? 'UAE');
-    _phoneController = TextEditingController(text: widget.initialAddress?.phone ?? '');
+
+    _nameController =
+        TextEditingController(text: widget.initialAddress?.name ?? '');
+    _addressLine1Controller =
+        TextEditingController(text: widget.initialAddress?.addressLine1 ?? '');
+    _cityController =
+        TextEditingController(text: widget.initialAddress?.city ?? '');
+    _stateController =
+        TextEditingController(text: widget.initialAddress?.state ?? '');
+    _postalCodeController =
+        TextEditingController(text: widget.initialAddress?.postalCode ?? '');
+    _countryController =
+        TextEditingController(text: widget.initialAddress?.country ?? 'UAE');
+    _phoneController =
+        TextEditingController(text: widget.initialAddress?.phone ?? '');
     _isDefault = widget.initialAddress?.isDefault ?? false;
   }
 
@@ -61,84 +68,71 @@ class _AddressFormScreenState extends State<AddressFormScreen> {
   }
 
   Future<void> _saveAddress() async {
-    if (_formKey.currentState!.validate()) {
-      setState(() {
-        _isLoading = true;
-      });
-      
-      try {
-        // TODO: Fetch current userId from UserService
-        final userId = 'current_user_id'; // Replace with actual userId fetching logic
-        
-        final address = Address(
-          id: widget.initialAddress?.id ?? '',
-          userId: userId,
-          name: _nameController.text,
-          addressLine1: _addressLine1Controller.text,
-          addressLine2: '', // Add logic for addressLine2 if needed
-          city: _cityController.text,
-          state: _stateController.text,
-          country: _countryController.text,
-          postalCode: _postalCodeController.text,
-          phone: _phoneController.text,
-          isDefault: _isDefault,
-          createdAt: widget.initialAddress?.createdAt ?? DateTime.now(),
-          updatedAt: DateTime.now(),
-        );
-        
-        if (widget.isEditing && widget.initialAddress != null) {
-          // TODO: Fix once user_service.dart is provided
-          await _userService.updateAddress(address.id, address.toMap());
-          if (_isDefault) {
-            await _userService.setDefaultAddress(address.id);
-          }
-        } else {
-          final newAddress = await _userService.addAddress(address.toMap());
-          if (_isDefault) {
-            await _userService.setDefaultAddress(newAddress.id);
-          }
-        }
-        
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-          
-          // Show confirmation dialog
-          showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              title: Text(widget.isEditing ? 'Address Updated' : 'Address Added'),
-              content: Text(
-                widget.isEditing
-                    ? 'Your address has been successfully updated.'
-                    : 'Your address has been successfully added.'
-              ),
-              actions: [
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context); // Close dialog
-                    Navigator.pop(context, true); // Return to previous screen with success result
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.indigo[900],
-                  ),
-                  child: const Text('OK'),
-                ),
-              ],
-            ),
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          setState(() {
-            _isLoading = false;
-          });
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Error saving address: ${e.toString()}')),
-          );
-        }
+    if (!_formKey.currentState!.validate()) return;
+
+    setState(() => _isLoading = true);
+
+    try {
+      // In a real app you’d read the signed-in user ID here.
+      final userId = 'current_user_id';
+
+      final address = Address(
+        id: widget.initialAddress?.id ?? '',
+        userId: userId,
+        name: _nameController.text,
+        addressLine1: _addressLine1Controller.text,
+        addressLine2: '', // extend the form if you need line-2
+        city: _cityController.text,
+        state: _stateController.text,
+        country: _countryController.text,
+        postalCode: _postalCodeController.text,
+        phone: _phoneController.text,
+        isDefault: _isDefault,
+        createdAt: widget.initialAddress?.createdAt ?? DateTime.now(),
+        updatedAt: DateTime.now(),
+      );
+
+      if (widget.isEditing && widget.initialAddress != null) {
+        // ——— update ———
+        await _userService.updateAddress(address);
+        if (_isDefault) await _userService.setDefaultAddress(address.id);
+      } else {
+        // ——— add ———
+        final newAddress = await _userService.addAddress(address);
+        if (_isDefault) await _userService.setDefaultAddress(newAddress.id);
       }
+
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+
+      // success dialog
+      await showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: Text(widget.isEditing ? 'Address Updated' : 'Address Added'),
+          content: Text(widget.isEditing
+              ? 'Your address has been successfully updated.'
+              : 'Your address has been successfully added.'),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(context); // close dialog
+                Navigator.pop(context, true); // return success flag
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.indigo[900],
+              ),
+              child: const Text('OK'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      setState(() => _isLoading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error saving address: $e')),
+      );
     }
   }
 
@@ -158,139 +152,59 @@ class _AddressFormScreenState extends State<AddressFormScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    // Name field
-                    TextFormField(
+                    _buildTextField(
                       controller: _nameController,
-                      decoration: const InputDecoration(
-                        labelText: 'Address Name',
-                        hintText: 'e.g., Home, Work, etc.',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter an address name';
-                        }
-                        return null;
-                      },
+                      label: 'Address Name',
+                      hint: 'e.g., Home, Work',
                     ),
                     const SizedBox(height: 16),
-                    
-                    // Address Line 1 field
-                    TextFormField(
+                    _buildTextField(
                       controller: _addressLine1Controller,
-                      decoration: const InputDecoration(
-                        labelText: 'Address Line 1',
-                        hintText: 'Enter your street address',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your street address';
-                        }
-                        return null;
-                      },
+                      label: 'Address Line 1',
+                      hint: 'Enter your street address',
                     ),
                     const SizedBox(height: 16),
-                    
-                    // City field
-                    TextFormField(
+                    _buildTextField(
                       controller: _cityController,
-                      decoration: const InputDecoration(
-                        labelText: 'City',
-                        hintText: 'Enter your city',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your city';
-                        }
-                        return null;
-                      },
+                      label: 'City',
+                      hint: 'Enter your city',
                     ),
                     const SizedBox(height: 16),
-                    
-                    // State field
-                    TextFormField(
+                    _buildTextField(
                       controller: _stateController,
-                      decoration: const InputDecoration(
-                        labelText: 'State/Emirate',
-                        hintText: 'Enter your state or emirate',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your state or emirate';
-                        }
-                        return null;
-                      },
+                      label: 'State / Emirate',
+                      hint: 'Enter your state or emirate',
                     ),
                     const SizedBox(height: 16),
-                    
-                    // Postal Code field
-                    TextFormField(
+                    _buildTextField(
                       controller: _postalCodeController,
-                      decoration: const InputDecoration(
-                        labelText: 'Postal Code',
-                        hintText: 'Enter your postal code',
-                        border: OutlineInputBorder(),
-                      ),
+                      label: 'Postal Code',
+                      hint: 'Enter your postal code',
                       keyboardType: TextInputType.number,
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                      ],
+                      inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                      validator: (_) => null, // optional
                     ),
                     const SizedBox(height: 16),
-                    
-                    // Country field
-                    TextFormField(
+                    _buildTextField(
                       controller: _countryController,
-                      decoration: const InputDecoration(
-                        labelText: 'Country',
-                        hintText: 'Enter your country',
-                        border: OutlineInputBorder(),
-                      ),
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your country';
-                        }
-                        return null;
-                      },
+                      label: 'Country',
+                      hint: 'Enter your country',
                     ),
                     const SizedBox(height: 16),
-                    
-                    // Phone field
-                    TextFormField(
+                    _buildTextField(
                       controller: _phoneController,
-                      decoration: const InputDecoration(
-                        labelText: 'Phone Number',
-                        hintText: 'Enter your phone number',
-                        border: OutlineInputBorder(),
-                        prefixText: '+971 ',
-                      ),
+                      label: 'Phone Number',
+                      hint: 'Enter your phone',
                       keyboardType: TextInputType.phone,
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please enter your phone number';
-                        }
-                        return null;
-                      },
                     ),
                     const SizedBox(height: 16),
-                    
-                    // Default address checkbox
                     CheckboxListTile(
-                      title: const Text('Set as default address'),
                       value: _isDefault,
-                      onChanged: (value) {
-                        setState(() {
-                          _isDefault = value ?? false;
-                        });
-                      },
+                      onChanged: (v) => setState(() => _isDefault = v ?? false),
+                      title: const Text('Set as default address'),
                       controlAffinity: ListTileControlAffinity.leading,
                     ),
                     const SizedBox(height: 24),
-                    
-                    // Save button
                     ElevatedButton(
                       onPressed: _saveAddress,
                       style: ElevatedButton.styleFrom(
@@ -306,6 +220,30 @@ class _AddressFormScreenState extends State<AddressFormScreen> {
                 ),
               ),
             ),
+    );
+  }
+
+  // simple helper to keep build() tidy
+  Widget _buildTextField({
+    required TextEditingController controller,
+    required String label,
+    required String hint,
+    TextInputType keyboardType = TextInputType.text,
+    List<TextInputFormatter>? inputFormatters,
+    String? Function(String?)? validator,
+  }) {
+    return TextFormField(
+      controller: controller,
+      decoration: InputDecoration(
+        labelText: label,
+        hintText: hint,
+        border: const OutlineInputBorder(),
+      ),
+      keyboardType: keyboardType,
+      inputFormatters: inputFormatters,
+      validator: validator ??
+          (value) =>
+              (value == null || value.isEmpty) ? 'Please enter $label' : null,
     );
   }
 }

@@ -273,25 +273,14 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
                           },
                           child: Stack(
                             children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(4),
-                                child: Image.asset(
-                                  'assets/images/uae_map_preview.png',
-                                  fit: BoxFit.cover,
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                  errorBuilder: (context, error, stackTrace) {
-                                    return Container(
-                                      color: Colors.grey[200],
-                                      child: const Center(
-                                        child: Icon(
-                                          Icons.map,
-                                          size: 50,
-                                          color: Colors.grey,
-                                        ),
-                                      ),
-                                    );
-                                  },
+                              // Static preview removed – show a grey map icon instead.
+                              Container(
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[200],
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Center(
+                                  child: Icon(Icons.map, size: 60, color: Colors.grey),
                                 ),
                               ),
                               Container(

@@ -45,8 +45,8 @@ class _SignupScreenState extends State<SignupScreen> {
         final user = await _authService.signUp(
           email: _emailController.text.trim(),
           password: _passwordController.text,
-          name: _nameController.text.trim(),
-          phone: _phoneController.text.trim(),
+          username: _nameController.text.trim(),
+          phoneNumber: _phoneController.text.trim(),
         );
         
         if (user != null) {

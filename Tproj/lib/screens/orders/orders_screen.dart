@@ -107,7 +107,7 @@ class _OrdersScreenState extends State<OrdersScreen> with SingleTickerProviderSt
           ),
         ],
       ),
-      bottomNavigationBar: const BottomNavBar(currentIndex: 2),
+      bottomNavigationBar: const BottomNavBar(currentIndex: 3),
     );
   }
 

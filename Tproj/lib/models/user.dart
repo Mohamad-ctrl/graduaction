@@ -1,4 +1,3 @@
-// File: lib/models/user.dart
 class User {
   final String id;
   final String username;
@@ -22,7 +21,9 @@ class User {
     required this.updatedAt,
   });
 
-  // Create a User from a map (e.g., from Firestore)
+  // UI (admin dashboard) expects .name
+  String get name => username;
+
   factory User.fromMap(Map<String, dynamic> map, String id) {
     return User(
       id: id,
@@ -37,21 +38,17 @@ class User {
     );
   }
 
-  // Convert User to a map (e.g., for Firestore)
-  Map<String, dynamic> toMap() {
-    return {
-      'username': username,
-      'email': email,
-      'phoneNumber': phoneNumber,
-      'profileImageUrl': profileImageUrl,
-      'addresses': addresses,
-      'paymentMethods': paymentMethods,
-      'createdAt': createdAt,
-      'updatedAt': updatedAt,
-    };
-  }
+  Map<String, dynamic> toMap() => {
+        'username': username,
+        'email': email,
+        'phoneNumber': phoneNumber,
+        'profileImageUrl': profileImageUrl,
+        'addresses': addresses,
+        'paymentMethods': paymentMethods,
+        'createdAt': createdAt,
+        'updatedAt': updatedAt,
+      };
 
-  // Create a copy of User with some fields updated
   User copyWith({
     String? username,
     String? email,
@@ -62,14 +59,14 @@ class User {
     DateTime? updatedAt,
   }) {
     return User(
-      id: this.id,
+      id: id,
       username: username ?? this.username,
       email: email ?? this.email,
       phoneNumber: phoneNumber ?? this.phoneNumber,
       profileImageUrl: profileImageUrl ?? this.profileImageUrl,
       addresses: addresses ?? this.addresses,
       paymentMethods: paymentMethods ?? this.paymentMethods,
-      createdAt: this.createdAt,
+      createdAt: createdAt,
       updatedAt: updatedAt ?? DateTime.now(),
     );
   }
