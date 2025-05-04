@@ -1,151 +1,90 @@
 // File: lib/services/supabase_storage_service.dart
-import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+// On mobile: dart:io File; on web: storage_client stub File
+import 'dart:io' if (dart.library.html) 'package:storage_client/src/file_stub.dart';
 
 class SupabaseStorageService {
   final SupabaseClient _supabase = Supabase.instance.client;
-  
-  // Initialize Supabase
+
+  /// Call once in main()
   static Future<void> initialize({
     required String supabaseUrl,
     required String supabaseAnonKey,
-  }) async {
-    await Supabase.initialize(
-      url: supabaseUrl,
-      anonKey: supabaseAnonKey,
-    );
-  }
-  
-  // Upload a file to Supabase Storage
+  }) => Supabase.initialize(url: supabaseUrl, anonKey: supabaseAnonKey);
+
+  /// Upload a single file.
   Future<String?> uploadFile({
     required String bucketName,
     required String path,
     required File file,
   }) async {
     try {
-      final fileExtension = file.path.split('.').last;
-      final fileName = '${DateTime.now().millisecondsSinceEpoch}.$fileExtension';
+      final ext = kIsWeb ? 'png' : file.path.split('.').last;
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}.$ext';
       final filePath = path.isEmpty ? fileName : '$path/$fileName';
-      
-      await _supabase
-          .storage
-          .from(bucketName)
-          .upload(filePath, file);
-      
-      // Get the public URL
-      final fileUrl = _supabase
-          .storage
-          .from(bucketName)
-          .getPublicUrl(filePath);
-      
-      return fileUrl;
+      await _supabase.storage.from(bucketName).upload(filePath, file);
+      return _supabase.storage.from(bucketName).getPublicUrl(filePath);
     } catch (e) {
-      print('Error uploading file to Supabase Storage: $e');
+      print('Supabase upload error: $e');
       return null;
     }
   }
-  
-  // Upload multiple files to Supabase Storage
+
+  /// Upload multiple files.
   Future<List<String>> uploadFiles({
     required String bucketName,
     required String path,
     required List<File> files,
   }) async {
-    List<String> fileUrls = [];
-    
-    try {
-      for (var i = 0; i < files.length; i++) {
-        final file = files[i];
-        final fileExtension = file.path.split('.').last;
-        final fileName = '${DateTime.now().millisecondsSinceEpoch}_$i.$fileExtension';
-        final filePath = path.isEmpty ? fileName : '$path/$fileName';
-        
-        await _supabase
-            .storage
-            .from(bucketName)
-            .upload(filePath, file);
-        
-        // Get the public URL
-        final fileUrl = _supabase
-            .storage
-            .from(bucketName)
-            .getPublicUrl(filePath);
-        
-        fileUrls.add(fileUrl);
+    final urls = <String>[];
+    for (var i = 0; i < files.length; i++) {
+      final file = files[i];
+      final ext = kIsWeb ? 'png' : file.path.split('.').last;
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}_$i.$ext';
+      final filePath = path.isEmpty ? fileName : '$path/$fileName';
+      try {
+        await _supabase.storage.from(bucketName).upload(filePath, file);
+        urls.add(_supabase.storage.from(bucketName).getPublicUrl(filePath));
+      } catch (e) {
+        print('Supabase multi-upload error (file $i): $e');
       }
-      
-      return fileUrls;
-    } catch (e) {
-      print('Error uploading files to Supabase Storage: $e');
-      return fileUrls;
     }
+    return urls;
   }
-  
-  // Download a file from Supabase Storage
-  Future<File?> downloadFile({
-    required String bucketName,
-    required String path,
-    required String savePath,
-  }) async {
-    try {
-      final bytes = await _supabase
-          .storage
-          .from(bucketName)
-          .download(path);
-      
-      final file = File(savePath);
-      await file.writeAsBytes(bytes);
-      
-      return file;
-    } catch (e) {
-      print('Error downloading file from Supabase Storage: $e');
-      return null;
-    }
-  }
-  
-  // Get a public URL for a file
+
+  /// Get public URL for a stored file.
   String getPublicUrl({
     required String bucketName,
     required String path,
-  }) {
-    return _supabase
-        .storage
-        .from(bucketName)
-        .getPublicUrl(path);
-  }
-  
-  // Delete a file from Supabase Storage
+  }) =>
+      _supabase.storage.from(bucketName).getPublicUrl(path);
+
+  /// Delete one file.
   Future<bool> deleteFile({
     required String bucketName,
     required String path,
   }) async {
     try {
-      await _supabase
-          .storage
-          .from(bucketName)
-          .remove([path]);
-      
+      await _supabase.storage.from(bucketName).remove([path]);
       return true;
     } catch (e) {
-      print('Error deleting file from Supabase Storage: $e');
+      print('Supabase delete error: $e');
       return false;
     }
   }
-  
-  // Delete multiple files from Supabase Storage
+
+  /// Delete multiple files.
   Future<bool> deleteFiles({
     required String bucketName,
     required List<String> paths,
   }) async {
     try {
-      await _supabase
-          .storage
-          .from(bucketName)
-          .remove(paths);
-      
+      await _supabase.storage.from(bucketName).remove(paths);
       return true;
     } catch (e) {
-      print('Error deleting files from Supabase Storage: $e');
+      print('Supabase multi-delete error: $e');
       return false;
     }
   }

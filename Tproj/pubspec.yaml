@@ -1,5 +1,5 @@
 # File: pubspec.yaml
-name: Tproj
+name: graduaction_project
 description: A mobile application for remote item inspection and delivery services.
 publish_to: 'none'
 version: 1.0.0+1
@@ -30,6 +30,7 @@ dependencies:
 dependency_overrides:
   # Force an updated version of sign_in_with_apple which uses the new Android embedding.
   sign_in_with_apple: ^7.0.1
+  google_maps_flutter_web: ^0.4.0
 
 dev_dependencies:
   flutter_test:
@@ -39,7 +40,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/images/
+    - assets/images/splash_logo.png
   fonts:
     - family: Roboto
       fonts:

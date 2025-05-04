@@ -6,10 +6,11 @@ import 'constants/app_routes.dart';
 import 'services/auth_service.dart';
 import 'services/agent_service.dart';
 import 'services/supabase_storage_service.dart';
+import 'firebase_options.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await Firebase.initializeApp();
+  await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform,);
   
   // Initialize Supabase for storage with the provided credentials
   await SupabaseStorageService.initialize(
@@ -18,14 +19,15 @@ void main() async {
   );
   print('Supabase initialized with actual credentials');
   
-  // Create mock agents for testing the admin panel
-  final agentService = AgentService();
-  try {
-    await agentService.createMockAgents();
-    print('Mock agents created successfully');
-  } catch (e) {
-    print('Error creating mock agents: $e');
-  }
+    // Reset and create mock agents for testing the admin panel
+    final agentService = AgentService();
+    const int numberOfMockAgents = 15; // Define how many agents to create
+    try {
+      await agentService.resetAndCreateMockAgents(numberOfMockAgents);
+      print("Successfully reset and created $numberOfMockAgents mock agents");
+    } catch (e) {
+      print("Error resetting/creating mock agents: $e");
+    }
   
   runApp(const MyApp());
 }
@@ -61,7 +63,7 @@ class MyApp extends StatelessWidget {
           ),
         ),
       ),
-      initialRoute: _determineInitialRoute(),
+      initialRoute: AppRoutes.splash, // Start with the splash screen
       onGenerateRoute: AppRoutes.generateRoute,
       debugShowCheckedModeBanner: false,
     );

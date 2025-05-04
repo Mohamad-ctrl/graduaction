@@ -35,8 +35,10 @@ import '../screens/admin/admin_agents_screen.dart';
 import '../screens/admin/add_agent_screen.dart';
 import '../screens/admin/admin_inspections_screen.dart';
 import '../screens/admin/admin_deliveries_screen.dart';
+import '../screens/splash_screen.dart';
 
 class AppRoutes {
+  static const splash                = '/';
   // ───────── public auth ─────────
   static const login                 = '/login';
   static const signup                = '/signup';
@@ -79,6 +81,7 @@ class AppRoutes {
   // ────────────────────────────────────────────────────────────
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
+      case splash:             return MaterialPageRoute(builder: (_) => const SplashScreen());
       // auth
       case login:              return MaterialPageRoute(builder: (_) => const LoginScreen());
       case signup:             return MaterialPageRoute(builder: (_) => const SignupScreen());
