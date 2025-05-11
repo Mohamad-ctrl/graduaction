@@ -184,10 +184,12 @@ class _AdminAgentsScreenState extends State<AdminAgentsScreen> {
                           child: Text('No agents found matching the filters'),
                         )
                       : ListView.builder(
-                          itemCount: _filteredAgents.length,
-                          itemBuilder: (context, index) {
-                            final agent = _filteredAgents[index];
-                            return _buildAgentCard(agent);
+                        padding: const EdgeInsets.only(
+                          bottom: 90), // ↙︎ gives space under FAB
+                        itemCount: _filteredAgents.length,
+                        itemBuilder: (context, index) {
+                          final agent = _filteredAgents[index];
+                          return _buildAgentCard(agent);
                           },
                         ),
                 ),
@@ -263,7 +265,8 @@ class _AdminAgentsScreenState extends State<AdminAgentsScreen> {
           ],
         ),
         onTap: () {
-          Navigator.of(context).pushNamed(
+          Navigator.pushNamed(
+            context,
             '/admin/agent/details',
             arguments: agent.id,
           );

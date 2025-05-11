@@ -36,6 +36,7 @@ import '../screens/admin/add_agent_screen.dart';
 import '../screens/admin/admin_inspections_screen.dart';
 import '../screens/admin/admin_deliveries_screen.dart';
 import '../screens/splash_screen.dart';
+import '../screens/admin/agent_info_screen.dart';
 
 class AppRoutes {
   static const splash                = '/';
@@ -143,6 +144,8 @@ class AppRoutes {
       case adminAddAgent:    return MaterialPageRoute(builder: (_) => const AddAgentScreen());
       case adminInspections: return MaterialPageRoute(builder: (_) => const AdminInspectionsScreen());
       case adminDeliveries:  return MaterialPageRoute(builder: (_) => const AdminDeliveriesScreen());
+      case '/admin/agent/details': final id = settings.arguments as String; return MaterialPageRoute(builder: (_) => AgentInfoScreen(agentId: id));
+      
 
       default:
         return MaterialPageRoute(
