@@ -1,6 +1,6 @@
 # Remote Item Inspection and Delivery Service for Long-Distance Purchases
 
-This repository contains the source code for the "Check & Deliver" mobile application, a final year project designed to facilitate remote item inspection and secure delivery for long-distance online purchases. The application aims to bridge the trust gap between buyers and sellers by providing a platform where trusted agents can inspect items on behalf of buyers before purchase and delivery.
+This repository contains the source code for the "Remote Item Inspection and Delivery Service for Long-Distance Purchases" mobile application, a final year project designed to facilitate remote item inspection and secure delivery for long-distance online purchases. The application aims to bridge the trust gap between buyers and sellers by providing a platform where trusted agents can inspect items on behalf of buyers before purchase and delivery.
 
 For a comprehensive understanding of the project, including its aims, objectives, design, implementation details, and analysis, please refer to the full project report located in the `/latex_report` directory (once compiled to PDF).
 
