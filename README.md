@@ -6,7 +6,7 @@ For a comprehensive understanding of the project, including its aims, objectives
 
 ## Overview
 
-In the ever-expanding world of e-commerce, purchasing items from distant sellers often comes with uncertainty regarding the item's actual condition and authenticity. "Check & Deliver" addresses this by offering a two-pronged service:
+In the ever-expanding world of e-commerce, purchasing items from distant sellers often comes with uncertainty regarding the item's actual condition and authenticity. "Remote Item Inspection and Delivery Service for Long-Distance Purchases" addresses this by offering a two-pronged service:
 
 1.  **Remote Item Inspection:** Users can request a verified agent to inspect an item at the seller's location. The agent provides a detailed report, including images and comments, on the item's condition.
 2.  **Secure Delivery:** Once an item is inspected and approved (or for standalone delivery requests), users can arrange for secure delivery of the item to their desired address.
@@ -121,16 +121,4 @@ To run this application locally, you will need to have Flutter installed and con
     ```bash
     flutter run
     ```
-
-## Full Project Report
-
-A detailed academic report accompanying this project has been prepared in LaTeX. It covers the project's introduction, literature review, methodology, in-depth design and implementation details (including code snippets and screen descriptions with image placeholders), expected results, discussion, conclusion, and future work. The LaTeX source files are located in the `/latex_report` directory. You will need a LaTeX distribution (e.g., MiKTeX, TeX Live, Overleaf) to compile the `main.tex` file into a PDF document.
-
-## Contributing
-
-This project was developed as part of a final year academic requirement. While contributions are not actively sought at this moment, feedback and suggestions are welcome. Please open an issue to discuss any potential improvements or report bugs.
-
-## License
-
-Please refer to the `LICENSE` file in the repository if available. If not specified, the code is provided as-is for educational and demonstration purposes related to the academic project.
 
